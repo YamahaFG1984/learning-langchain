@@ -1,39 +1,40 @@
+"""The interrupt pattern: stop a running graph from outside it."""
+
 import asyncio
 from contextlib import aclosing
 
-from langchain.schema import HumanMessage
-from langgraph.graph import StateGraph
-from langgraph.checkpoint.memory import MemorySaver
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
+
+from agent import QUESTION, build_graph
 
 
 async def main():
-    # Create a simple graph
-    builder = StateGraph()
-    # Add nodes and edges as needed
-    graph = builder.compile(checkpointer=MemorySaver())
+    # A checkpointer is required: it saves the state after each completed step,
+    # so the run can be resumed after being interrupted.
+    graph = build_graph(checkpointer=InMemorySaver())
 
-    event = asyncio.Event()
+    stop = asyncio.Event()
 
-    input = {
-        "messages": [
-            HumanMessage(
-                "How old was the 30th president of the United States when he died?"
-            )
-        ]
-    }
-
+    input = {"messages": [HumanMessage(QUESTION)]}
     config = {"configurable": {"thread_id": "1"}}
 
+    async def interrupt_after(seconds: float):
+        await asyncio.sleep(seconds)
+        stop.set()
+
+    asyncio.create_task(interrupt_after(2))
+
+    # `aclosing` makes sure the stream is closed properly when we break out of it.
     async with aclosing(graph.astream(input, config)) as stream:
         async for chunk in stream:
-            if event.is_set():
+            if stop.is_set():
+                print("interrupted!")
                 break
-            else:
-                print(chunk)  # do something with the output
+            print(chunk)
 
-    # Simulate interruption after 2 seconds
-    await asyncio.sleep(2)
-    event.set()
+    # The state as of the last completed step is still there:
+    print("\nsaved state:", (await graph.aget_state(config)).next)
 
 
 if __name__ == "__main__":

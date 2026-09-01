@@ -3,7 +3,6 @@ from typing import Annotated, TypedDict
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, START, END, add_messages
-from langgraph.checkpoint.memory import MemorySaver
 
 
 class State(TypedDict):
@@ -12,7 +11,7 @@ class State(TypedDict):
 
 builder = StateGraph(State)
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 
 def chatbot(state: State):

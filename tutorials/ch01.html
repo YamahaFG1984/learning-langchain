@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LLM 基础与 LangChain 构建块｜Learning LangChain 中文教程</title>
+<meta name="description" content="聊天模型、提示模板、结构化输出，以及把它们拼起来的两种方式。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+  <a class="brand" href="index.html">
+    <span class="brand__mark">Learning LangChain</span>
+    <span class="brand__name">中文精读教程</span>
+    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
+  </a>
+  <div>
+    <h3>章节</h3>
+    <nav class="chapnav">
+    <a href="ch01.html" aria-current="page"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
+    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
+    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
+    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
+    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
+    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
+    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
+    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
+    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
+    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
+    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
+    </nav>
+  </div>
+  <div>
+    <h3>本章目录</h3>
+    <nav class="toc">
+      <a href="#problem">问题在哪里</a>
+      <a href="#two-interfaces">两个接口：LLM 与聊天模型</a>
+      <a href="#prompt-template">让提示词可复用：提示模板</a>
+      <a href="#structured">让模型吐出 JSON</a>
+      <a href="#runnable">Runnable：所有零件长得一样</a>
+      <a href="#compose">拼装：命令式还是声明式</a>
+      <a href="#exercise">动手练一练</a>
+    </nav>
+  </div>
+</aside>
+<main class="main">
+<div class="wrap">
+  <div class="topbar">
+    <span class="crumb">第 01 章</span>
+    <div class="tools">
+      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
+      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
+      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
+    </div>
+  </div>
+<header class="chead">
+  <p class="eyebrow">第 01 章</p>
+  <h1>LLM 基础与 LangChain 构建块</h1>
+  <p class="lede">大模型只做一件事：给它一段文本，它接着往下写。整本书剩下的内容，都是在解决「怎么把该给的东西给它，怎么把它吐出来的东西收好」。这一章先认零件。</p>
+</header>
+
+<div class="note">
+  <p class="note__title">读完这一章你会</p>
+  <ul style="margin-bottom:0">
+    <li>说清楚 <code>LLM</code> 接口和 <code>ChatModel</code> 接口的区别，以及三种消息角色各干什么</li>
+    <li>用 <code>PromptTemplate</code> / <code>ChatPromptTemplate</code> 把提示词变成可复用的「配方」</li>
+    <li>用 <code>with_structured_output</code> 让模型稳定吐出 JSON</li>
+    <li>理解 Runnable 的 <code>invoke / batch / stream</code> 三件套，并在命令式和 LCEL 之间做出选择</li>
+  </ul>
+</div>
+
+<h2 id="problem">问题在哪里</h2>
+
+<p>把 LLM 塞进应用里，难的从来不是「调用 API」。难的是两头：<strong>进去的提示怎么拼</strong>，<strong>出来的文本怎么用</strong>。模型本身是中间那个黑盒，你改不了；你能改的只有它的左右两侧。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 780 220" role="img" aria-label="LLM 应用的两个难点：左侧构造提示，右侧解析输出，模型本身是不可控的黑盒" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="20" y="76" width="120" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.3" opacity=".55"/>
+    <text x="80" y="105" text-anchor="middle" font-size="12" fill="currentColor">用户输入</text>
+    <text x="80" y="122" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">+ 你的数据</text>
+
+    <rect x="196" y="66" width="150" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="271" y="98" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">① 构造提示</text>
+    <text x="271" y="117" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">模板 · 上下文 · 指令</text>
+    <text x="271" y="133" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">第 1–4 章</text>
+
+    <rect x="402" y="76" width="120" height="60" rx="30" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3"/>
+    <text x="462" y="101" text-anchor="middle" font-size="12" fill="currentColor">LLM</text>
+    <text x="462" y="119" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">你改不了的黑盒</text>
+
+    <rect x="578" y="66" width="150" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="653" y="98" text-anchor="middle" font-size="12.5" font-weight="600" fill="currentColor">② 处理输出</text>
+    <text x="653" y="117" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">解析 · 校验 · 分发</text>
+    <text x="653" y="133" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">第 1、8 章</text>
+
+    <line x1="142" y1="106" x2="192" y2="106" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <line x1="348" y1="106" x2="398" y2="106" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+    <line x1="524" y1="106" x2="574" y2="106" stroke="currentColor" stroke-width="1.4" marker-end="url(#a1)"/>
+
+    <text x="271" y="45" text-anchor="middle" font-size="11" fill="currentColor" opacity=".55">提示词 / 消息列表</text>
+    <text x="653" y="45" text-anchor="middle" font-size="11" fill="currentColor" opacity=".55">纯文本 → 结构化数据</text>
+
+    <text x="374" y="192" text-anchor="middle" font-size="11.5" fill="currentColor" opacity=".65">LangChain 提供的，就是这两侧的可复用零件</text>
+  </svg>
+  </div>
+  <figcaption>你的工程量集中在模型两侧，而不是模型本身。</figcaption>
+</figure>
+
+<h2 id="two-interfaces">两个接口：LLM 与聊天模型</h2>
+
+<p>LangChain 给模型提供了两套接口。<code>LLM</code> 是「字符串进、字符串出」；<code>ChatModel</code> 是「消息列表进、一条消息出」。</p>
+
+<p><strong>今天你几乎只会用聊天模型。</strong>原书里演示 <code>OpenAI</code>（文本补全）接口时用的是 <code>gpt-3.5-turbo</code>，其实那个模型走的是 chat API；纯补全接口现在只剩 <code>gpt-3.5-turbo-instruct</code> 还在用。所以本仓库的示例统一用 <code>ChatOpenAI</code>。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 700 250" role="img" aria-label="LLM 接口接收字符串返回字符串；聊天模型接收带角色的消息列表，返回一条 AI 消息" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <text x="16" y="24" font-size="12" font-weight="600" fill="currentColor">LLM 接口</text>
+    <rect x="16" y="38" width="150" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/>
+    <text x="91" y="60" text-anchor="middle" font-size="11" fill="currentColor">"The sky is"</text>
+    <line x1="172" y1="55" x2="242" y2="55" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+    <text x="207" y="46" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">invoke</text>
+    <rect x="248" y="38" width="100" height="34" rx="17" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="298" y="60" text-anchor="middle" font-size="11" fill="currentColor">模型</text>
+    <line x1="354" y1="55" x2="424" y2="55" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+    <rect x="430" y="38" width="150" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/>
+    <text x="505" y="60" text-anchor="middle" font-size="11" fill="currentColor">"blue."</text>
+
+    <line x1="16" y1="98" x2="684" y2="98" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <text x="16" y="124" font-size="12" font-weight="600" fill="currentColor">聊天模型接口</text>
+    <rect x="16" y="138" width="212" height="86" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/>
+    <rect x="28" y="148" width="188" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+    <text x="36" y="162" font-size="10.5" fill="currentColor">system：你是一个简洁的助手</text>
+    <rect x="28" y="172" width="188" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+    <text x="36" y="186" font-size="10.5" fill="currentColor">human：法国首都是哪？</text>
+    <rect x="28" y="196" width="188" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5" stroke-dasharray="3 2"/>
+    <text x="36" y="210" font-size="10.5" fill="currentColor" opacity=".6">ai：（上一轮的回答）</text>
+
+    <line x1="234" y1="181" x2="242" y2="181" stroke="currentColor" stroke-width="0"/>
+    <line x1="234" y1="181" x2="242" y2="181" stroke="currentColor" stroke-width="1.3"/>
+    <line x1="236" y1="181" x2="242" y2="181" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+    <rect x="248" y="164" width="100" height="34" rx="17" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="298" y="186" text-anchor="middle" font-size="11" fill="currentColor">模型</text>
+    <line x1="354" y1="181" x2="424" y2="181" stroke="currentColor" stroke-width="1.3" marker-end="url(#a2)"/>
+    <rect x="430" y="164" width="212" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="536" y="186" text-anchor="middle" font-size="11" fill="currentColor">AIMessage("Paris.")</text>
+    <text x="536" y="216" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">再追加回消息列表，就有了多轮对话</text>
+  </svg>
+  </div>
+  <figcaption>聊天模型把「角色」显式化，这是后面所有记忆、工具调用机制的基础。</figcaption>
+</figure>
+
+<h3>三种角色</h3>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>类</th><th>角色</th><th>用来放什么</th></tr></thead>
+  <tbody>
+    <tr><td><code>SystemMessage</code></td><td>system</td><td>你（开发者）给模型的行为指令。用户看不到，但对输出影响极大。</td></tr>
+    <tr><td><code>HumanMessage</code></td><td>user</td><td>用户的问题，以及你塞进去的检索结果等上下文。</td></tr>
+    <tr><td><code>AIMessage</code></td><td>assistant</td><td>模型生成的内容。也是工具调用请求的载体（第 6 章）。</td></tr>
+    <tr><td><code>ToolMessage</code></td><td>tool</td><td>工具执行结果，必须紧跟在发起调用的 <code>AIMessage</code> 之后。</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch1/{py,js}/c-system</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_core.messages <span class="k">import</span> HumanMessage, SystemMessage
+<span class="k">from</span> langchain_openai.chat_models <span class="k">import</span> ChatOpenAI
+
+model = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>)
+
+system_msg = <span class="f">SystemMessage</span>(
+    <span class="s">"You are a helpful assistant that responds to questions with three exclamation marks."</span>
+)
+human_msg = <span class="f">HumanMessage</span>(<span class="s">"What is the capital of France?"</span>)
+
+response = model.<span class="f">invoke</span>([system_msg, human_msg])
+<span class="f">print</span>(response.content)
+<span class="c"># Paris!!!</span></code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+<span class="k">import</span> { HumanMessage, SystemMessage } <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
+
+<span class="k">const</span> model = <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span> });
+
+<span class="k">const</span> prompt = [
+  <span class="k">new</span> <span class="f">SystemMessage</span>(
+    <span class="s">'You are a helpful assistant that responds to questions with three exclamation marks.'</span>
+  ),
+  <span class="k">new</span> <span class="f">HumanMessage</span>(<span class="s">'What is the capital of France?'</span>),
+];
+
+<span class="k">const</span> response = <span class="k">await</span> model.<span class="f">invoke</span>(prompt);
+console.<span class="f">log</span>(response.content);
+<span class="c">// Paris!!!</span></code></pre></div>
+</div>
+
+<div class="note">
+  <p class="note__title">两个最常调的参数</p>
+  <p><code>temperature</code> 控制随机性：结构化输出、路由判断用 <code>0</code>–<code>0.1</code>；创意写作用 <code>0.7</code>+。<code>max_tokens</code> 控制输出长度上限，也就是控制成本；调太小会看到答案被硬生生截断。</p>
+</div>
+
+<h2 id="prompt-template">让提示词可复用：提示模板</h2>
+
+<p>提示词里通常有一部分是固定的（指令、格式要求），一部分是变的（用户问题、检索到的上下文）。模板就是把这两部分分开：<strong>模板是配方，<code>invoke</code> 之后才是一份具体的提示。</strong></p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 700 200" role="img" aria-label="提示模板把固定的指令和运行时填入的变量分开，invoke 之后产出一份具体提示" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="16" y="40" width="220" height="120" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="126" y="32" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">模板（写一次，用很多次）</text>
+    <rect x="30" y="54" width="192" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".45"/>
+    <text x="38" y="67" font-size="10" fill="currentColor" opacity=".75">Answer based on the context…</text>
+    <rect x="30" y="80" width="192" height="18" rx="3" fill="currentColor" opacity=".12"/>
+    <text x="38" y="93" font-size="10" fill="currentColor">Context: {context}</text>
+    <rect x="30" y="106" width="192" height="18" rx="3" fill="currentColor" opacity=".12"/>
+    <text x="38" y="119" font-size="10" fill="currentColor">Question: {question}</text>
+    <text x="38" y="145" font-size="10" fill="currentColor" opacity=".55">灰底 = 运行时才填的占位符</text>
+
+    <line x1="242" y1="100" x2="300" y2="100" stroke="currentColor" stroke-width="1.4" marker-end="url(#a3)"/>
+    <text x="271" y="90" text-anchor="middle" font-size="10" fill="currentColor" opacity=".6">invoke</text>
+    <text x="271" y="120" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".55">{context, question}</text>
+
+    <rect x="306" y="40" width="220" height="120" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="416" y="32" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">一份具体提示</text>
+    <text x="318" y="67" font-size="10" fill="currentColor" opacity=".75">Answer based on the context…</text>
+    <text x="318" y="93" font-size="10" fill="currentColor">Context: LLMs are…</text>
+    <text x="318" y="119" font-size="10" fill="currentColor">Question: 谁提供 LLM？</text>
+    <text x="318" y="145" font-size="10" fill="currentColor" opacity=".55">PromptValue（可直接喂给模型）</text>
+
+    <line x1="532" y1="100" x2="590" y2="100" stroke="currentColor" stroke-width="1.4" marker-end="url(#a3)"/>
+    <rect x="596" y="82" width="88" height="36" rx="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
+    <text x="640" y="105" text-anchor="middle" font-size="11" fill="currentColor">模型</text>
+  </svg>
+  </div>
+  <figcaption>模板本身也是一个 Runnable：它的 <code>invoke</code> 产出提示，而不是产出答案。</figcaption>
+</figure>
+
+<p>做聊天应用时用 <code>ChatPromptTemplate</code>，可以按角色分别设定模板：</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch1/{py,js}/g-chat-prompt-model</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_core.prompts <span class="k">import</span> ChatPromptTemplate
+<span class="k">from</span> langchain_openai.chat_models <span class="k">import</span> ChatOpenAI
+
+<span class="c"># template 和 model 都可以复用很多次</span>
+template = ChatPromptTemplate.<span class="f">from_messages</span>([
+    (<span class="s">"system"</span>, <span class="s">'根据下面的上下文回答问题。若无法回答，就说 "I don\'t know"。'</span>),
+    (<span class="s">"human"</span>, <span class="s">"Context: {context}"</span>),
+    (<span class="s">"human"</span>, <span class="s">"Question: {question}"</span>),
+])
+
+model = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>)
+
+prompt = template.<span class="f">invoke</span>({<span class="s">"context"</span>: <span class="s">"..."</span>, <span class="s">"question"</span>: <span class="s">"Which model providers offer LLMs?"</span>})
+<span class="f">print</span>(model.<span class="f">invoke</span>(prompt).content)</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { ChatPromptTemplate } <span class="k">from</span> <span class="s">'@langchain/core/prompts'</span>;
+<span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+
+<span class="k">const</span> template = ChatPromptTemplate.<span class="f">fromMessages</span>([
+  [<span class="s">'system'</span>, <span class="s">'根据下面的上下文回答问题。若无法回答，就说 "I don\'t know"。'</span>],
+  [<span class="s">'human'</span>, <span class="s">'Context: {context}'</span>],
+  [<span class="s">'human'</span>, <span class="s">'Question: {question}'</span>],
+]);
+
+<span class="k">const</span> model = <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span> });
+
+<span class="k">const</span> prompt = <span class="k">await</span> template.<span class="f">invoke</span>({ context: <span class="s">'...'</span>, question: <span class="s">'Which model providers offer LLMs?'</span> });
+console.<span class="f">log</span>((<span class="k">await</span> model.<span class="f">invoke</span>(prompt)).content);</code></pre></div>
+</div>
+
+<div class="note note--pit">
+  <p class="note__title">易踩的坑</p>
+  <p>模板默认用 f-string 语法，<code>{}</code> 里的东西会被当成变量。如果你的提示里本身要出现花括号（比如举 JSON 例子），要写成 <code>{{</code> 和 <code>}}</code> 转义，否则会报缺少变量。</p>
+</div>
+
+<h2 id="structured">让模型吐出 JSON</h2>
+
+<p>纯文本适合给人看，不适合给代码看。当 LLM 只是你系统里的一环时，你需要它输出<strong>符合你定义的 schema 的结构化数据</strong>。</p>
+
+<p><code>with_structured_output()</code> 一行搞定这件事，它背后做了两件事：把你的 Pydantic / Zod 模型转成 JSON Schema 发给模型（走 function calling 或 JSON mode），再用同一个 schema 校验返回值。校验不过会直接报错，而不是把脏数据传下去。</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch1/{py,js}/h-structured</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
+<span class="k">from</span> pydantic <span class="k">import</span> BaseModel, Field
+
+
+<span class="k">class</span> <span class="f">AnswerWithJustification</span>(BaseModel):
+    <span class="s">"""An answer to the user's question along with justification."""</span>
+
+    answer: str = <span class="f">Field</span>(description=<span class="s">"给用户的答案"</span>)
+    justification: str = <span class="f">Field</span>(description=<span class="s">"给出这个答案的理由"</span>)
+
+
+llm = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>, temperature=<span class="n">0</span>)
+structured_llm = llm.<span class="f">with_structured_output</span>(AnswerWithJustification)
+
+<span class="f">print</span>(structured_llm.<span class="f">invoke</span>(<span class="s">"一磅砖头和一磅羽毛哪个重？"</span>))
+<span class="c"># AnswerWithJustification(answer='一样重', justification='都是一磅…')</span></code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+<span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
+
+<span class="k">const</span> answerSchema = z
+  .<span class="f">object</span>({
+    answer: z.<span class="f">string</span>().<span class="f">describe</span>(<span class="s">'给用户的答案'</span>),
+    justification: z.<span class="f">string</span>().<span class="f">describe</span>(<span class="s">'给出这个答案的理由'</span>),
+  })
+  .<span class="f">describe</span>(<span class="s">"An answer to the user's question along with justification."</span>);
+
+<span class="k">const</span> model = <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span>, temperature: <span class="n">0</span> })
+  .<span class="f">withStructuredOutput</span>(answerSchema);
+
+console.<span class="f">log</span>(<span class="k">await</span> model.<span class="f">invoke</span>(<span class="s">'一磅砖头和一磅羽毛哪个重？'</span>));</code></pre></div>
+</div>
+
+<div class="note note--v1">
+  <p class="note__title">1.x 变更</p>
+  <p>书上写的是 <code>from langchain_core.pydantic_v1 import BaseModel</code>。这个兼容层已经删除了，现在直接 <code>from pydantic import BaseModel, Field</code>。另外注意：<strong><code>Field(description=...)</code> 里的描述不是注释，是给模型看的提示</strong>——写清楚了准确率会明显提高。</p>
+</div>
+
+<p>如果你要的不是 JSON 而是 CSV、XML 之类，用输出解析器（Output Parser）。它同样是个 Runnable，可以直接接在模型后面：</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch1/{py,js}/i-csv</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_core.output_parsers <span class="k">import</span> CommaSeparatedListOutputParser
+
+parser = <span class="f">CommaSeparatedListOutputParser</span>()
+<span class="f">print</span>(parser.<span class="f">invoke</span>(<span class="s">"apple, banana, cherry"</span>))
+<span class="c"># ['apple', 'banana', 'cherry']</span></code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { CommaSeparatedListOutputParser } <span class="k">from</span> <span class="s">'@langchain/core/output_parsers'</span>;
+
+<span class="k">const</span> parser = <span class="k">new</span> <span class="f">CommaSeparatedListOutputParser</span>();
+console.<span class="f">log</span>(<span class="k">await</span> parser.<span class="f">invoke</span>(<span class="s">'apple, banana, cherry'</span>));
+<span class="c">// ['apple', 'banana', 'cherry']</span></code></pre></div>
+</div>
+
+<h2 id="runnable">Runnable：所有零件长得一样</h2>
+
+<p>你可能已经注意到了：模型、模板、解析器，全都用 <code>invoke</code>。这不是巧合——它们都实现了同一个 <span class="kbd-term">Runnable</span> 接口。<strong>学会一个，就等于学会全部。</strong></p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>方法</th><th>输入 → 输出</th><th>什么时候用</th></tr></thead>
+  <tbody>
+    <tr><td><code>invoke</code></td><td>一个 → 一个</td><td>默认选择</td></tr>
+    <tr><td><code>batch</code></td><td>一批 → 一批</td><td>多条独立输入，会自动并发（第 3 章多查询检索靠它）</td></tr>
+    <tr><td><code>stream</code></td><td>一个 → 逐块产出</td><td>要让用户尽快看到第一个字</td></tr>
+    <tr><td><code>ainvoke</code> / <code>abatch</code> / <code>astream</code></td><td>同上，异步版</td><td>Python 里在 async 上下文中使用；JS 本来就是异步的</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="compose">拼装：命令式还是声明式</h2>
+
+<p>把零件连起来有两条路。它们产出的东西用法完全一样（都是 Runnable，都能 <code>invoke</code>），区别在于你写多少代码、以及框架能帮你做多少。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 720 300" role="img" aria-label="命令式组合用普通函数手写每一步；声明式 LCEL 用管道符连接，流式与并发由框架自动处理" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <text x="16" y="22" font-size="12" font-weight="600" fill="currentColor">命令式：自己写函数</text>
+    <rect x="16" y="34" width="330" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"/>
+    <rect x="34" y="56" width="86" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="77" y="77" text-anchor="middle" font-size="10.5" fill="currentColor">template</text>
+    <line x1="126" y1="73" x2="152" y2="73" stroke="currentColor" stroke-width="1.2" marker-end="url(#a4)"/>
+    <rect x="158" y="56" width="86" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="201" y="77" text-anchor="middle" font-size="10.5" fill="currentColor">model</text>
+    <line x1="250" y1="73" x2="276" y2="73" stroke="currentColor" stroke-width="1.2" marker-end="url(#a4)"/>
+    <rect x="282" y="56" width="50" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".5"/>
+    <text x="307" y="77" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".7">…</text>
+    <text x="34" y="115" font-size="10.5" fill="currentColor" opacity=".7">流式 / 并发 / 异步：要自己写 yield、gather</text>
+
+    <text x="392" y="22" font-size="12" font-weight="600" fill="currentColor">声明式：LCEL 管道</text>
+    <rect x="392" y="34" width="312" height="96" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <rect x="410" y="56" width="86" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="453" y="77" text-anchor="middle" font-size="10.5" fill="currentColor">template</text>
+    <text x="512" y="78" text-anchor="middle" font-size="16" fill="currentColor">|</text>
+    <rect x="528" y="56" width="86" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="571" y="77" text-anchor="middle" font-size="10.5" fill="currentColor">model</text>
+    <text x="630" y="78" text-anchor="middle" font-size="16" fill="currentColor">|</text>
+    <rect x="646" y="56" width="42" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".5"/>
+    <text x="667" y="77" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".7">…</text>
+    <text x="410" y="115" font-size="10.5" fill="currentColor" opacity=".7">流式 / 并发 / 异步：框架自动给你</text>
+
+    <line x1="16" y1="158" x2="704" y2="158" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <text x="360" y="186" text-anchor="middle" font-size="11.5" fill="currentColor">两边产出的都是 Runnable，调用方式一模一样：</text>
+    <rect x="250" y="200" width="220" height="34" rx="17" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="360" y="222" text-anchor="middle" font-size="11.5" fill="currentColor">chatbot.invoke({"question": …})</text>
+    <text x="360" y="266" text-anchor="middle" font-size="11" fill="currentColor" opacity=".65">要写很多自定义逻辑 → 命令式；只是把现成零件串起来 → LCEL</text>
+  </svg>
+  </div>
+  <figcaption>选择的依据不是「哪个更高级」，而是这一段里自定义逻辑有多少。</figcaption>
+</figure>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch1/{py,js}/k-imperative · l-declarative</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_core.prompts <span class="k">import</span> ChatPromptTemplate
+<span class="k">from</span> langchain_core.runnables <span class="k">import</span> chain
+<span class="k">from</span> langchain_openai.chat_models <span class="k">import</span> ChatOpenAI
+
+template = ChatPromptTemplate.<span class="f">from_messages</span>([
+    (<span class="s">"system"</span>, <span class="s">"You are a helpful assistant."</span>),
+    (<span class="s">"human"</span>, <span class="s">"{question}"</span>),
+])
+model = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>)
+
+<span class="c"># ① 命令式：@chain 把任意函数变成 Runnable</span>
+<span class="f">@chain</span>
+<span class="k">def</span> <span class="f">chatbot</span>(values):
+    prompt = template.<span class="f">invoke</span>(values)
+    <span class="k">return</span> model.<span class="f">invoke</span>(prompt)
+
+<span class="c"># ② 声明式：| 就是「把左边的输出喂给右边」</span>
+chatbot_lcel = template | model
+
+<span class="c"># 用法完全一样</span>
+chatbot.<span class="f">invoke</span>({<span class="s">"question"</span>: <span class="s">"谁提供 LLM 服务？"</span>})
+chatbot_lcel.<span class="f">invoke</span>({<span class="s">"question"</span>: <span class="s">"谁提供 LLM 服务？"</span>})</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { ChatPromptTemplate } <span class="k">from</span> <span class="s">'@langchain/core/prompts'</span>;
+<span class="k">import</span> { RunnableLambda } <span class="k">from</span> <span class="s">'@langchain/core/runnables'</span>;
+<span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+
+<span class="k">const</span> template = ChatPromptTemplate.<span class="f">fromMessages</span>([
+  [<span class="s">'system'</span>, <span class="s">'You are a helpful assistant.'</span>],
+  [<span class="s">'human'</span>, <span class="s">'{question}'</span>],
+]);
+<span class="k">const</span> model = <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span> });
+
+<span class="c">// ① 命令式：RunnableLambda 把任意函数变成 Runnable</span>
+<span class="k">const</span> chatbot = RunnableLambda.<span class="f">from</span>(<span class="k">async</span> (values) =&gt; {
+  <span class="k">const</span> prompt = <span class="k">await</span> template.<span class="f">invoke</span>(values);
+  <span class="k">return</span> <span class="k">await</span> model.<span class="f">invoke</span>(prompt);
+});
+
+<span class="c">// ② 声明式：pipe 就是「把左边的输出喂给右边」</span>
+<span class="k">const</span> chatbotLcel = template.<span class="f">pipe</span>(model);
+
+<span class="k">await</span> chatbot.<span class="f">invoke</span>({ question: <span class="s">'谁提供 LLM 服务？'</span> });
+<span class="k">await</span> chatbotLcel.<span class="f">invoke</span>({ question: <span class="s">'谁提供 LLM 服务？'</span> });</code></pre></div>
+</div>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th></th><th>命令式</th><th>声明式（LCEL）</th></tr></thead>
+  <tbody>
+    <tr><td>语法</td><td>普通 Python / JS</td><td><code>|</code> / <code>.pipe()</code></td></tr>
+    <tr><td>并行</td><td>自己开线程 / <code>Promise.all</code></td><td>自动</td></tr>
+    <tr><td>流式</td><td>自己 <code>yield</code></td><td>自动</td></tr>
+    <tr><td>异步</td><td>自己写 <code>async</code> 版本</td><td>自动</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p class="note__title">承上启下</p>
+  <p>从第 4 章开始，本书会把主力从 LCEL 切到 <strong>LangGraph</strong>。原因很简单：LCEL 擅长「一条直线」，而真实应用有循环、有分支、有需要保存下来的中间状态。LCEL 并没有被废弃——它仍然是拼装单个步骤的最佳工具，只是不再负责整体编排。</p>
+</div>
+
+<h2 id="exercise">动手练一练</h2>
+
+<ol>
+  <li>把 <code>ch1/py/l-declarative.py</code> 的 <code>ChatOpenAI()</code> 换成 <code>temperature=1.2</code>，连跑三次，观察输出差异；再换回 <code>0</code>，看看是否稳定。</li>
+  <li>给 <code>h-structured.py</code> 的 schema 加一个 <code>confidence: float</code> 字段，写好 <code>description</code>，看模型是否会填。</li>
+  <li>把 <code>k-imperative.py</code> 里的 <code>return model.invoke(prompt)</code> 改成 <code>for token in model.stream(prompt): yield token</code>，再用 <code>chatbot.stream(...)</code> 调用——这就是命令式下手动支持流式的样子。</li>
+</ol>
+
+<nav class="pager">
+  <a href="index.html"><span class="dir">返回</span><span class="ttl">课程首页</span></a>
+  <a class="next" href="ch02.html"><span class="dir">下一章</span><span class="ttl">02 · RAG 上篇：为你的数据建索引</span></a>
+</nav>
+</div>
+</main>
+</div>
+<script src="assets/course.js"></script>
+</body>
+</html>

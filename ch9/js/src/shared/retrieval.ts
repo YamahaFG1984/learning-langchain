@@ -2,7 +2,7 @@ import { VectorStoreRetriever } from '@langchain/core/vectorstores';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { SupabaseVectorStore } from '@langchain/community/vectorstores/supabase';
 import { createClient } from '@supabase/supabase-js';
-import { RunnableConfig } from '@langchain/core/runnables';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import { Embeddings } from '@langchain/core/embeddings';
 import { ensureBaseConfiguration } from './configuration.js';
 import { Chroma } from '@langchain/community/vectorstores/chroma';

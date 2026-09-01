@@ -1,7 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage } from '@langchain/core/messages';
 
-const model = new ChatOpenAI();
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 const prompt = [new HumanMessage('What is the capital of France?')];
 
 const response = await model.invoke(prompt);

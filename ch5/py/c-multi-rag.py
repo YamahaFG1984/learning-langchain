@@ -7,11 +7,11 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
-embeddings = OpenAIEmbeddings()
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 # useful to generate SQL query
-model_low_temp = ChatOpenAI(temperature=0.1)
+model_low_temp = ChatOpenAI(model="gpt-4.1-mini", temperature=0.1)
 # useful to generate natural language outputs
-model_high_temp = ChatOpenAI(temperature=0.7)
+model_high_temp = ChatOpenAI(model="gpt-4.1-mini", temperature=0.7)
 
 
 class State(TypedDict):
@@ -119,7 +119,7 @@ def generate_answer(state: State) -> State:
     }
 
 
-builder = StateGraph(State, input=Input, output=Output)
+builder = StateGraph(State, input_schema=Input, output_schema=Output)
 builder.add_node("router", router_node)
 builder.add_node("retrieve_medical_records", retrieve_medical_records)
 builder.add_node("retrieve_insurance_faqs", retrieve_insurance_faqs)

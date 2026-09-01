@@ -103,3 +103,7 @@ logs/
 
 # Jest coverage
 coverage/
+
+# The book itself (copyrighted, not ours to redistribute)
+*.pdf
+!test.pdf

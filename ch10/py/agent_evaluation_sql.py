@@ -1,15 +1,13 @@
-from agent_sql_graph import builder
-from langchain import hub
+from agent_sql_graph import assistant_runnable, builder, graph
+from langchain_classic import hub
 from langchain_openai import ChatOpenAI
 from langsmith.evaluation import evaluate
 from langsmith.schemas import Example, Run
-from langchain_core.runnables import Runnable
-from agent_sql_graph import assistant_runnable
 import uuid
 _printed = set()
 thread_id = str(uuid.uuid4())
-experiment_prefix = "sql-agent-gpt4o"
-metadata = "chinook-gpt-4o-base-case-agent"
+experiment_prefix = "sql-agent-gpt41"
+metadata = "chinook-gpt-4.1-base-case-agent"
 config = {
     "configurable": {
         # Checkpoints are accessed by thread_id
@@ -41,7 +39,7 @@ def answer_evaluator(run, example) -> dict:
     prediction = run.outputs["response"]
 
     # LLM grader
-    llm = ChatOpenAI(model="gpt-4o", temperature=0)
+    llm = ChatOpenAI(model="gpt-4.1", temperature=0)
 
     # Structured prompt
     answer_grader = grade_prompt_answer_accuracy | llm

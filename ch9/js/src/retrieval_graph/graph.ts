@@ -12,7 +12,7 @@ import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { pull } from 'langchain/hub';
 import { AIMessage, BaseMessage, HumanMessage } from '@langchain/core/messages';
 import { z } from 'zod';
-import { RunnableConfig } from '@langchain/core/runnables';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import { loadChatModel } from '../shared/utils.js';
 import {
   AgentConfigurationAnnotation,

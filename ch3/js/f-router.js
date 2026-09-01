@@ -12,7 +12,7 @@ const routeQuery = z
   })
   .describe('Route a user query to the most relevant datasource.');
 
-const llm = new ChatOpenAI({ model: 'gpt-3.5-turbo', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 });
 // withStructuredOutput is a method that allows us to use the structured output of the model
 const structuredLlm = llm.withStructuredOutput(routeQuery, {
   name: 'RouteQuery',

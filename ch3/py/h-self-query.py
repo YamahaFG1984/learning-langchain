@@ -1,7 +1,7 @@
 # pip install lark
 
-from langchain.chains.query_constructor.base import AttributeInfo
-from langchain.retrievers.self_query.base import SelfQueryRetriever
+from langchain_classic.chains.query_constructor.schema import AttributeInfo
+from langchain_classic.retrievers.self_query.base import SelfQueryRetriever
 from langchain_openai import ChatOpenAI
 from langchain_community.document_loaders import TextLoader
 from langchain_openai import OpenAIEmbeddings
@@ -45,7 +45,7 @@ docs = [
 ]
 
 # Create embeddings for the documents
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 
 vectorstore = PGVector.from_documents(
     docs, embeddings_model, connection=connection)
@@ -75,7 +75,7 @@ fields = [
 ]
 
 description = "Brief summary of a movie"
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
 retriever = SelfQueryRetriever.from_llm(llm, vectorstore, description, fields)
 
 # This example only specifies a filter

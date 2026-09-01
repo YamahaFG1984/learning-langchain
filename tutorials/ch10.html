@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>测试：评估、监控与改进｜Learning LangChain 中文教程</title>
+<meta name="description" content="自纠正 RAG、数据集、评估器、回归测试与线上追踪。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+  <a class="brand" href="index.html">
+    <span class="brand__mark">Learning LangChain</span>
+    <span class="brand__name">中文精读教程</span>
+    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
+  </a>
+  <div>
+    <h3>章节</h3>
+    <nav class="chapnav">
+    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
+    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
+    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
+    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
+    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
+    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
+    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
+    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
+    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
+    <a href="ch10.html" aria-current="page"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
+    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
+    </nav>
+  </div>
+  <div>
+    <h3>本章目录</h3>
+    <nav class="toc">
+      <a href="#cycle">三个阶段构成一个闭环</a>
+      <a href="#self-corrective">设计阶段：自纠正 RAG</a>
+      <a href="#dataset">预生产：先有数据集</a>
+      <a href="#evaluators">三类评估器</a>
+      <a href="#regression">回归测试：这一版有没有变差</a>
+      <a href="#agent-eval">评估 Agent：三个粒度</a>
+      <a href="#production">生产：追踪与在线评估</a>
+      <a href="#summary">小结</a>
+    </nav>
+  </div>
+</aside>
+<main class="main">
+<div class="wrap">
+  <div class="topbar">
+    <span class="crumb">第 10 章</span>
+    <div class="tools">
+      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
+      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
+      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
+    </div>
+  </div>
+<header class="chead">
+  <p class="eyebrow">第 10 章</p>
+  <h1>测试：评估、监控与持续改进</h1>
+  <p class="lede">传统软件的测试要求 100% 通过。LLM 应用做不到——同一个输入两次结果可能不同。所以测试的目标从「是否正确」变成了「相比上一版有没有变差」。</p>
+</header>
+
+<div class="note">
+  <p class="note__title">读完这一章你会</p>
+  <ul style="margin-bottom:0">
+    <li>用「设计 → 预生产 → 生产」三阶段框架安排测试工作</li>
+    <li>实现自纠正 RAG：让应用在出错前自己发现并修正</li>
+    <li>建数据集，选对评估器（启发式 / 人工 / LLM 裁判）</li>
+    <li>用三个粒度评估 Agent：最终回答、单步决策、完整轨迹</li>
+  </ul>
+</div>
+
+<h2 id="cycle">三个阶段构成一个闭环</h2>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 700 280" role="img" aria-label="测试闭环：设计阶段内置自纠正，预生产阶段做离线评估与回归测试，生产阶段追踪并收集反馈，线上问题回流成新的测试用例" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="j1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="40" y="60" width="160" height="86" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="120" y="84" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">设计</text>
+    <text x="120" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity=".72">在应用内部内置纠错</text>
+    <text x="120" y="120" text-anchor="middle" font-size="9" fill="currentColor" opacity=".72">自纠正 RAG</text>
+    <text x="120" y="136" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">错误在到达用户前被修掉</text>
+
+    <rect x="270" y="60" width="160" height="86" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="350" y="84" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">预生产</text>
+    <text x="350" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity=".72">离线评估 offline eval</text>
+    <text x="350" y="120" text-anchor="middle" font-size="9" fill="currentColor" opacity=".72">数据集 · 评估器 · 回归测试</text>
+    <text x="350" y="136" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">有标准答案可以对比</text>
+
+    <rect x="500" y="60" width="160" height="86" rx="7" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="580" y="84" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">生产</text>
+    <text x="580" y="104" text-anchor="middle" font-size="9" fill="currentColor" opacity=".72">在线评估 online eval</text>
+    <text x="580" y="120" text-anchor="middle" font-size="9" fill="currentColor" opacity=".72">追踪 · 用户反馈 · 打标</text>
+    <text x="580" y="136" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">没有标准答案，只能实时评分</text>
+
+    <line x1="204" y1="103" x2="264" y2="103" stroke="currentColor" stroke-width="1.4" marker-end="url(#j1)"/>
+    <line x1="434" y1="103" x2="494" y2="103" stroke="currentColor" stroke-width="1.4" marker-end="url(#j1)"/>
+
+    <path d="M 580 150 L 580 206 L 120 206 L 120 150" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#j1)"/>
+    <text x="350" y="226" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">线上抓到的错误 → 加进数据集 → 下一轮不再复现</text>
+    <text x="350" y="248" text-anchor="middle" font-size="10" fill="currentColor" opacity=".62">这条回流边是整个闭环里最有价值的一条</text>
+
+    <text x="350" y="36" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">设计 → 测试 → 部署 → 监控 → 修复 → 再设计</text>
+  </svg>
+  </div>
+  <figcaption>三个阶段各有各的测试手段，但真正让系统变好的是那条从生产回到数据集的边。</figcaption>
+</figure>
+
+<h2 id="self-corrective">设计阶段：自纠正 RAG</h2>
+
+<p>朴素 RAG 有两个失败点：<strong>检索到的东西不相关</strong>，以及<strong>模型基于正确材料还是编</strong>。自纠正 RAG 在每一环后面加一个「打分员」，不合格就回退重来。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 720 300" role="img" aria-label="自纠正 RAG 控制流：检索后打分，文档相关就生成，不相关就改写查询转网页搜索；生成后再检查是否有幻觉" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="j2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <circle cx="40" cy="76" r="17" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <text x="40" y="80" text-anchor="middle" font-size="8" fill="currentColor">START</text>
+    <line x1="59" y1="76" x2="94" y2="76" stroke="currentColor" stroke-width="1.3" marker-end="url(#j2)"/>
+
+    <rect x="100" y="54" width="112" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="156" y="80" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">retrieve</text>
+
+    <line x1="216" y1="76" x2="248" y2="76" stroke="currentColor" stroke-width="1.3" marker-end="url(#j2)"/>
+
+    <rect x="254" y="48" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="319" y="70" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">grade_documents</text>
+    <text x="319" y="86" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">LLM 逐条判定 yes / no</text>
+
+    <path d="M 388 62 L 450 62" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#j2)"/>
+    <text x="398" y="54" font-size="8.5" fill="currentColor" opacity=".75">全部相关</text>
+    <path d="M 319 108 L 319 148" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#j2)"/>
+    <text x="326" y="132" font-size="8.5" fill="currentColor" opacity=".75">有不相关的</text>
+
+    <rect x="456" y="40" width="112" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="512" y="66" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">generate</text>
+
+    <rect x="254" y="152" width="130" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="319" y="171" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">transform_query</text>
+    <text x="319" y="186" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">改写成更适合搜索的问法</text>
+
+    <line x1="388" y1="174" x2="426" y2="174" stroke="currentColor" stroke-width="1.3" marker-end="url(#j2)"/>
+    <rect x="432" y="152" width="130" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="497" y="171" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">web_search_node</text>
+    <text x="497" y="186" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">兜底：上网找</text>
+
+    <path d="M 566 152 L 590 152 L 590 62 L 572 62" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#j2)"/>
+
+    <line x1="572" y1="62" x2="600" y2="62" stroke="currentColor" stroke-width="0"/>
+    <path d="M 512 36 L 512 20 L 656 20 L 656 62" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#j2)"/>
+    <circle cx="656" cy="80" r="17" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
+    <text x="656" y="84" text-anchor="middle" font-size="8" fill="currentColor">END</text>
+
+    <line x1="16" y1="226" x2="704" y2="226" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <text x="16" y="250" font-size="10.5" font-weight="600" fill="currentColor">两个可以再加的检查点</text>
+    <text x="16" y="270" font-size="9.5" fill="currentColor" opacity=".72">· 生成后检查「答案是否被检索到的文档支撑」——不支撑就是幻觉，重新生成</text>
+    <text x="16" y="286" font-size="9.5" fill="currentColor" opacity=".72">· 生成后检查「答案是否真的回答了问题」——没回答就改写查询重来</text>
+  </svg>
+  </div>
+  <figcaption>关键在于用 Pydantic / Zod 把打分结果变成 <code>"yes"/"no"</code> 这样的<strong>可编程判断依据</strong>，条件边才能据此分流。</figcaption>
+</figure>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch10/{py,js}/retrieve-and-grade · search-graph</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_core.prompts <span class="k">import</span> ChatPromptTemplate
+<span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
+<span class="k">from</span> pydantic <span class="k">import</span> BaseModel, Field
+
+
+<span class="k">class</span> <span class="f">GradeDocuments</span>(BaseModel):
+    <span class="s">"""对检索到的文档做二元相关性打分。"""</span>
+
+    binary_score: str = <span class="f">Field</span>(description=<span class="s">"文档与问题是否相关，'yes' 或 'no'"</span>)
+
+
+llm = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>, temperature=<span class="n">0</span>)
+structured_llm_grader = llm.<span class="f">with_structured_output</span>(GradeDocuments)
+
+grade_prompt = ChatPromptTemplate.<span class="f">from_messages</span>([
+    (<span class="s">"system"</span>, <span class="s">"你在评估一份检索到的文档与用户问题的相关性。"</span>
+               <span class="s">"只要文档包含相关关键词或语义，就算相关。给出 'yes' 或 'no'。"</span>),
+    (<span class="s">"human"</span>, <span class="s">"检索到的文档：\n\n {document} \n\n 用户问题：{question}"</span>),
+])
+
+retrieval_grader = grade_prompt | structured_llm_grader
+
+
+<span class="k">def</span> <span class="f">grade_documents</span>(state):
+    filtered_docs, web_search = [], <span class="s">"No"</span>
+    <span class="k">for</span> d <span class="k">in</span> state[<span class="s">"documents"</span>]:
+        score = retrieval_grader.<span class="f">invoke</span>(
+            {<span class="s">"question"</span>: state[<span class="s">"question"</span>], <span class="s">"document"</span>: d.page_content}
+        )
+        <span class="k">if</span> score.binary_score == <span class="s">"yes"</span>:
+            filtered_docs.<span class="f">append</span>(d)
+        <span class="k">else</span>:
+            web_search = <span class="s">"Yes"</span>          <span class="c"># 只要有一条不相关，就触发兜底路径</span>
+    <span class="k">return</span> {<span class="s">"documents"</span>: filtered_docs, <span class="s">"question"</span>: state[<span class="s">"question"</span>], <span class="s">"web_search"</span>: web_search}
+
+
+<span class="k">def</span> <span class="f">decide_to_generate</span>(state):
+    <span class="k">return</span> <span class="s">"transform_query"</span> <span class="k">if</span> state[<span class="s">"web_search"</span>] == <span class="s">"Yes"</span> <span class="k">else</span> <span class="s">"generate"</span></code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
+
+<span class="k">const</span> GradeDocuments = z.<span class="f">object</span>({
+  binary_score: z.<span class="f">string</span>().<span class="f">describe</span>(<span class="s">"文档与问题是否相关，'yes' 或 'no'"</span>),
+});
+
+<span class="k">const</span> retrievalGrader = gradePrompt.<span class="f">pipe</span>(llm.<span class="f">withStructuredOutput</span>(GradeDocuments));
+
+<span class="k">const</span> gradeDocuments = <span class="k">async</span> (state) =&gt; {
+  <span class="k">const</span> filteredDocs = [];
+  <span class="k">let</span> webSearch = <span class="s">'No'</span>;
+  <span class="k">for</span> (<span class="k">const</span> doc <span class="k">of</span> state.documents) {
+    <span class="k">const</span> score = <span class="k">await</span> retrievalGrader.<span class="f">invoke</span>({
+      question: state.question,
+      document: doc.pageContent,
+    });
+    <span class="k">if</span> (score.binary_score === <span class="s">'yes'</span>) filteredDocs.<span class="f">push</span>(doc);
+    <span class="k">else</span> webSearch = <span class="s">'Yes'</span>;
+  }
+  <span class="k">return</span> { documents: filteredDocs, question: state.question, webSearch };
+};</code></pre></div>
+</div>
+
+<h2 id="dataset">预生产：先有数据集</h2>
+
+<p>评估的前提是有一批「输入 + 期望输出」。三种来源：</p>
+
+<div class="grid2">
+  <div class="card"><p class="card__meta">来源 1</p><h4>手写</h4><p>10–50 条高质量样例就够起步。想着「用户最可能问什么」「理想答案长什么样」。</p></div>
+  <div class="card"><p class="card__meta">来源 2</p><h4>线上日志</h4><p>上线后把真实提问捞回来。这是让数据集贴近现实的唯一办法。</p></div>
+  <div class="card"><p class="card__meta">来源 3</p><h4>合成数据</h4><p>用 LLM 批量生成。补覆盖面快，但质量参差，要抽检。</p></div>
+</div>
+
+<p>LangSmith 里数据集有三种类型：<strong>kv</strong>（任意键值对，最通用，默认选它）、<strong>llm</strong>（单个 prompt / completion 字符串）、<strong>chat</strong>（序列化的消息列表）。</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch10/{py,js}/create-sql-dataset</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langsmith <span class="k">import</span> Client
+
+client = <span class="f">Client</span>()
+
+examples = [
+    (<span class="s">"哪个国家的客户消费最多？消费了多少？"</span>,
+     <span class="s">"消费最多的是美国客户，总额 523.06。"</span>),
+    (<span class="s">"2013 年最畅销的曲目是哪首？"</span>, <span class="s">"2013 年最畅销的曲目是 Hot Girl。"</span>),
+    (<span class="s">"Led Zeppelin 有多少张专辑？"</span>, <span class="s">"Led Zeppelin 有 14 张专辑。"</span>),
+]
+
+dataset_name = <span class="s">"sql-agent-response"</span>
+<span class="k">if</span> <span class="k">not</span> client.<span class="f">has_dataset</span>(dataset_name=dataset_name):
+    dataset = client.<span class="f">create_dataset</span>(dataset_name=dataset_name)
+    inputs, outputs = <span class="f">zip</span>(*[({<span class="s">"input"</span>: q}, {<span class="s">"output"</span>: a}) <span class="k">for</span> q, a <span class="k">in</span> examples])
+    client.<span class="f">create_examples</span>(inputs=inputs, outputs=outputs, dataset_id=dataset.id)</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { Client } <span class="k">from</span> <span class="s">'langsmith'</span>;
+
+<span class="k">const</span> client = <span class="k">new</span> <span class="f">Client</span>();
+<span class="k">const</span> datasetName = <span class="s">'sql-agent-response'</span>;
+
+<span class="k">if</span> (!(<span class="k">await</span> client.<span class="f">hasDataset</span>({ datasetName }))) {
+  <span class="k">const</span> dataset = <span class="k">await</span> client.<span class="f">createDataset</span>(datasetName);
+  <span class="k">await</span> client.<span class="f">createExamples</span>({
+    inputs: examples.<span class="f">map</span>(([q]) =&gt; ({ input: q })),
+    outputs: examples.<span class="f">map</span>(([, a]) =&gt; ({ output: a })),
+    datasetId: dataset.id,
+  });
+}</code></pre></div>
+</div>
+
+<h2 id="evaluators">三类评估器</h2>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 720 240" role="img" aria-label="三类评估器对比：启发式评估器用代码判断、人工评估器最准但不可扩展、LLM 裁判可扩展且能处理主观标准；推荐的采用顺序是启发式、人工、LLM 裁判" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="j3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="16" y="40" width="212" height="112" rx="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="122" y="64" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">启发式评估器</text>
+    <text x="30" y="86" font-size="9" fill="currentColor" opacity=".78">写死的函数和断言</text>
+    <text x="30" y="102" font-size="9" fill="currentColor" opacity=".78">· 无参考：输出是合法 JSON 吗</text>
+    <text x="30" y="118" font-size="9" fill="currentColor" opacity=".78">· 有参考：和标准答案完全一致吗</text>
+    <text x="30" y="140" font-size="9" fill="currentColor" opacity=".6">快、免费、完全确定</text>
+
+    <rect x="252" y="40" width="212" height="112" rx="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="358" y="64" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">人工评估器</text>
+    <text x="266" y="86" font-size="9" fill="currentColor" opacity=".78">人来打分</text>
+    <text x="266" y="102" font-size="9" fill="currentColor" opacity=".78">· 处理无法用代码表达的标准</text>
+    <text x="266" y="118" font-size="9" fill="currentColor" opacity=".78">· LangSmith 有标注队列加速</text>
+    <text x="266" y="140" font-size="9" fill="currentColor" opacity=".6">最准，但慢且贵，不可扩展</text>
+
+    <rect x="488" y="40" width="216" height="112" rx="7" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="596" y="64" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">LLM 裁判</text>
+    <text x="502" y="86" font-size="9" fill="currentColor" opacity=".78">把人的评分规则写进提示</text>
+    <text x="502" y="102" font-size="9" fill="currentColor" opacity=".78">· 用另一个 LLM 打分</text>
+    <text x="502" y="118" font-size="9" fill="currentColor" opacity=".78">· 人的修正存成 few-shot 样例回灌</text>
+    <text x="502" y="140" font-size="9" fill="currentColor" opacity=".6">可扩展，但需要不断调校</text>
+
+    <line x1="232" y1="96" x2="248" y2="96" stroke="currentColor" stroke-width="1.4" marker-end="url(#j3)"/>
+    <line x1="468" y1="96" x2="484" y2="96" stroke="currentColor" stroke-width="1.4" marker-end="url(#j3)"/>
+
+    <text x="360" y="192" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">推荐的采用顺序：先启发式打底，再人工定标准，最后用 LLM 裁判把人工自动化</text>
+    <text x="360" y="214" text-anchor="middle" font-size="10" fill="currentColor" opacity=".62">跳过前两步直接上 LLM 裁判，你会得到一堆没人知道对不对的分数</text>
+  </svg>
+  </div>
+  <figcaption>LangSmith 的 few-shot 评估器会把你对裁判的每次纠正存下来，使它逐渐向人的偏好靠拢。</figcaption>
+</figure>
+
+<div class="note">
+  <p class="note__title">成对比较（pairwise）</p>
+  <p>「A 和 B 哪个更好」比「给 A 打几分」容易得多——对人和对 LLM 都是。LangSmith 原生支持成对评估：定义一个比较用的裁判提示，跑两个版本，直接看谁赢。适合「更详细」「更安全」这类难以量化的标准。</p>
+</div>
+
+<h2 id="regression">回归测试：这一版有没有变差</h2>
+
+<p>AI 应用会因为<strong>模型漂移</strong>（提供商更新模型、数据分布变化）而性能波动。所以：</p>
+
+<ul>
+  <li><strong>跟踪趋势而非绝对分数。</strong>90% 不一定是好，从 95% 掉到 90% 一定是问题。</li>
+  <li><strong>逐条对比。</strong>总分持平也可能是「修好了 5 条、弄坏了 5 条」。LangSmith 的对比视图会把相对基线<span class="kbd-term">变好</span>和<span class="kbd-term">变差</span>的样例分别高亮出来。</li>
+  <li><strong>设定基线版本。</strong>每次改动都和它比，而不是和上一次比。</li>
+</ul>
+
+<h2 id="agent-eval">评估 Agent：三个粒度</h2>
+
+<p>Agent 难评估，因为每次运行的轨迹都可能不同：调的工具不一样、步数不一样、甚至可能陷入死循环。所以要分三层看。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 720 260" role="img" aria-label="Agent 三个评估粒度：最终回答把 Agent 当黑盒，单步只看一次决策，轨迹检查整个工具调用序列" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="j4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="90" y="40" width="60" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="120" y="59" text-anchor="middle" font-size="9" fill="currentColor">list_tables</text>
+    <line x1="154" y1="55" x2="180" y2="55" stroke="currentColor" stroke-width="1.1" marker-end="url(#j4)"/>
+    <rect x="186" y="40" width="60" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="216" y="59" text-anchor="middle" font-size="9" fill="currentColor">schema</text>
+    <line x1="250" y1="55" x2="276" y2="55" stroke="currentColor" stroke-width="1.1" marker-end="url(#j4)"/>
+    <rect x="282" y="40" width="60" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="312" y="59" text-anchor="middle" font-size="9" fill="currentColor">checker</text>
+    <line x1="346" y1="55" x2="372" y2="55" stroke="currentColor" stroke-width="1.1" marker-end="url(#j4)"/>
+    <rect x="378" y="40" width="60" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="408" y="59" text-anchor="middle" font-size="9" fill="currentColor">query</text>
+    <line x1="442" y1="55" x2="468" y2="55" stroke="currentColor" stroke-width="1.1" marker-end="url(#j4)"/>
+    <rect x="474" y="40" width="66" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="507" y="59" text-anchor="middle" font-size="9" fill="currentColor">check_result</text>
+    <line x1="544" y1="55" x2="570" y2="55" stroke="currentColor" stroke-width="1.1" marker-end="url(#j4)"/>
+    <rect x="576" y="40" width="66" height="30" rx="4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="609" y="59" text-anchor="middle" font-size="9" fill="currentColor">最终回答</text>
+
+    <rect x="80" y="104" width="576" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 3"/>
+    <text x="90" y="123" font-size="9.5" font-weight="600" fill="currentColor">③ 轨迹</text>
+    <text x="360" y="123" text-anchor="middle" font-size="9" fill="currentColor" opacity=".75">整个序列对不对：该调的工具都调了吗？顺序对吗？有没有多余的？</text>
+
+    <rect x="270" y="146" width="84" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 3"/>
+    <text x="280" y="165" font-size="9.5" font-weight="600" fill="currentColor">② 单步</text>
+    <line x1="312" y1="142" x2="312" y2="76" stroke="currentColor" stroke-width="1" opacity=".4"/>
+    <text x="368" y="165" font-size="9" fill="currentColor" opacity=".75">这一步选的工具对吗？参数对吗？定位问题出在哪一环</text>
+
+    <rect x="566" y="188" width="90" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 3"/>
+    <text x="576" y="207" font-size="9.5" font-weight="600" fill="currentColor">① 最终回答</text>
+    <line x1="609" y1="184" x2="609" y2="76" stroke="currentColor" stroke-width="1" opacity=".4"/>
+    <text x="556" y="207" text-anchor="end" font-size="9" fill="currentColor" opacity=".75">把 Agent 当黑盒：任务完成了没有？（用 LLM 裁判和标准答案比）</text>
+
+    <text x="360" y="244" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">先测①知道好不好，再测②③知道为什么不好</text>
+  </svg>
+  </div>
+  <figcaption>轨迹评估有两种严格程度：「所有该调的工具都调了（不论顺序）」和「顺序完全一致」。</figcaption>
+</figure>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch10/{py,js}/agent-evaluation-sql</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langsmith.evaluation <span class="k">import</span> evaluate
+<span class="k">from</span> langsmith.schemas <span class="k">import</span> Example, Run
+
+EXPECTED = [<span class="s">"sql_db_list_tables"</span>, <span class="s">"sql_db_schema"</span>,
+            <span class="s">"sql_db_query_checker"</span>, <span class="s">"sql_db_query"</span>, <span class="s">"check_result"</span>]
+
+
+<span class="k">def</span> <span class="f">find_tool_calls</span>(messages):
+    <span class="k">return</span> [tc[<span class="s">"name"</span>] <span class="k">for</span> m <span class="k">in</span> messages[<span class="s">"messages"</span>] <span class="k">for</span> tc <span class="k">in</span> <span class="f">getattr</span>(m, <span class="s">"tool_calls"</span>, [])]
+
+
+<span class="c"># ② 单步：第一个工具调用对不对</span>
+<span class="k">def</span> <span class="f">check_specific_tool_call</span>(root_run: Run, example: Example) -&gt; <span class="f">dict</span>:
+    response = root_run.outputs[<span class="s">"response"</span>]
+    <span class="k">try</span>:
+        tool_call = <span class="f">getattr</span>(response, <span class="s">"tool_calls"</span>, [])[<span class="n">0</span>][<span class="s">"name"</span>]
+    <span class="k">except</span> (IndexError, KeyError):
+        tool_call = <span class="k">None</span>
+    <span class="k">return</span> {<span class="s">"key"</span>: <span class="s">"single_tool_call"</span>, <span class="s">"score"</span>: <span class="f">int</span>(tool_call == <span class="s">"sql_db_list_tables"</span>)}
+
+
+<span class="c"># ③ 轨迹（宽松）：该调的都调了，顺序不论</span>
+<span class="k">def</span> <span class="f">contains_all_tool_calls_any_order</span>(root_run: Run, example: Example) -&gt; <span class="f">dict</span>:
+    tool_calls = <span class="f">find_tool_calls</span>(root_run.outputs[<span class="s">"response"</span>])
+    <span class="k">return</span> {<span class="s">"key"</span>: <span class="s">"multi_tool_call_any_order"</span>,
+            <span class="s">"score"</span>: <span class="f">int</span>(<span class="f">set</span>(EXPECTED) &lt;= <span class="f">set</span>(tool_calls))}
+
+
+<span class="c"># ③ 轨迹（严格）：顺序也要对（允许中间插入别的调用）</span>
+<span class="k">def</span> <span class="f">contains_all_tool_calls_in_order</span>(root_run: Run, example: Example) -&gt; <span class="f">dict</span>:
+    tool_calls = <span class="f">find_tool_calls</span>(root_run.outputs[<span class="s">"response"</span>])
+    it = <span class="f">iter</span>(tool_calls)      <span class="c"># 用同一个迭代器逐个找，就是子序列判定</span>
+    <span class="k">return</span> {<span class="s">"key"</span>: <span class="s">"multi_tool_call_in_order"</span>,
+            <span class="s">"score"</span>: <span class="f">int</span>(<span class="f">all</span>(e <span class="k">in</span> it <span class="k">for</span> e <span class="k">in</span> EXPECTED))}
+
+
+experiment_results = <span class="f">evaluate</span>(
+    predict_sql_agent_messages,
+    data=<span class="s">"sql-agent-response"</span>,
+    evaluators=[contains_all_tool_calls_any_order, contains_all_tool_calls_in_order],
+    num_repetitions=<span class="n">3</span>,          <span class="c"># 重复多次，抵消随机性</span>
+    experiment_prefix=<span class="s">"sql-agent-gpt41-trajectory"</span>,
+)</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">function</span> <span class="f">findToolCalls</span>({ messages }) {
+  <span class="k">return</span> messages.<span class="f">flatMap</span>((m) =&gt; m.tool_calls?.<span class="f">map</span>((tc) =&gt; tc.name) || []);
+}
+
+<span class="k">function</span> <span class="f">containsAllToolCallsAnyOrder</span>(rootRun) {
+  <span class="k">const</span> toolCalls = <span class="f">findToolCalls</span>(rootRun.outputs.response);
+  <span class="k">const</span> ok = EXPECTED.<span class="f">every</span>((e) =&gt; toolCalls.<span class="f">includes</span>(e));
+  <span class="k">return</span> { key: <span class="s">'multi_tool_call_any_order'</span>, score: ok ? <span class="n">1</span> : <span class="n">0</span> };
+}
+
+<span class="k">await</span> <span class="f">evaluate</span>(predictSqlAgentMessages, {
+  data: <span class="s">'sql-agent-response'</span>,
+  evaluators: [containsAllToolCallsAnyOrder],
+  numRepetitions: <span class="n">3</span>,
+});</code></pre></div>
+</div>
+
+<div class="note note--pit">
+  <p class="note__title">仓库里的两处修复</p>
+  <p><code>ch10/py/agent_evaluation_sql.py</code> 原来引用了未定义的 <code>graph</code>；<code>search_graph.py</code> 的网页搜索节点把返回的字符串当成了对象列表遍历。两处都已修好，SQLite checkpointer 也改成了 LangGraph 0.3+ 的正确用法。</p>
+</div>
+
+<h2 id="production">生产：追踪与在线评估</h2>
+
+<p>开启追踪只要配环境变量，一行代码都不用改：</p>
+
+<div class="shellblock">
+  <div class="codegroup__bar"><span class="codegroup__file">.env</span><span class="spacer"></span><button class="chip" data-copy type="button">复制</button></div>
+<pre><code>LANGCHAIN_TRACING_V2=true
+LANGCHAIN_API_KEY=ls__...
+LANGCHAIN_PROJECT="learning-langchain"</code></pre>
+</div>
+
+<p>之后每一次运行都会作为一条 <span class="kbd-term">trace</span>（从输入到输出的完整步骤链）出现在 LangSmith 里，附带调用量、成功率、延迟、token 数和成本。</p>
+
+<p>生产阶段和预生产的本质差别：<strong>没有标准答案。</strong>所以要换两种信号：</p>
+
+<ul>
+  <li><strong>用户反馈</strong>——点赞点踩、有没有复制走、有没有重问。最真实的信号。</li>
+  <li><strong>LLM 裁判实时打分</strong>——无参考评估，可以顺便当毒性和提示注入的护栏。</li>
+</ul>
+
+<p>此外还可以做<strong>分类打标</strong>：有标准标签就用启发式评估器算准确率，没有就用 LLM 裁判按你定义的标准打标（做情感分析、意图分布统计）。</p>
+
+<div class="note">
+  <p class="note__title">最实用的一条建议</p>
+  <p><strong>先小范围灰度。</strong>放给一小批 beta 用户，用他们的真实提问和真实错误来搭第一版评估数据集，再放大。这比闭门造车攒数据集有效得多。</p>
+</div>
+
+<h2 id="summary">小结</h2>
+
+<div class="grid2">
+  <div class="card"><p class="card__meta">记住这个</p><h4>目标是「没变差」不是「全对」</h4><p>LLM 应用不存在 100% 通过率，所以基线对比比绝对分数重要。</p></div>
+  <div class="card"><p class="card__meta">记住这个</p><h4>评估器从简单的开始</h4><p>启发式 → 人工 → LLM 裁判。倒着来会得到一堆无法验证的分数。</p></div>
+  <div class="card"><p class="card__meta">记住这个</p><h4>Agent 要分三层测</h4><p>最终回答、单步决策、完整轨迹。只测第一层查不出问题在哪。</p></div>
+  <div class="card"><p class="card__meta">记住这个</p><h4>线上错误必须回流</h4><p>每个线上 bug 都该变成一条数据集样例，否则它还会再来一次。</p></div>
+</div>
+
+<nav class="pager">
+  <a href="ch09.html"><span class="dir">上一章</span><span class="ttl">09 · 部署：送上生产</span></a>
+  <a class="next" href="ch11.html"><span class="dir">下一章</span><span class="ttl">11 · 用 LLM 做产品</span></a>
+</nav>
+</div>
+</main>
+</div>
+<script src="assets/course.js"></script>
+</body>
+</html>

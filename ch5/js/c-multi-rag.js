@@ -1,6 +1,6 @@
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { ChatOpenAI, OpenAIEmbeddings } from "@langchain/openai";
-import { MemoryVectorStore } from "langchain/vectorstores/memory";
+import { MemoryVectorStore } from "@langchain/classic/vectorstores/memory";
 import {
   StateGraph,
   Annotation,
@@ -9,11 +9,11 @@ import {
   END,
 } from "@langchain/langgraph";
 
-const embeddings = new OpenAIEmbeddings();
+const embeddings = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 // useful to generate SQL query
-const modelLowTemp = new ChatOpenAI({ temperature: 0.1 });
+const modelLowTemp = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0.1 });
 // useful to generate natural language outputs
-const modelHighTemp = new ChatOpenAI({ temperature: 0.7 });
+const modelHighTemp = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0.7 });
 
 const annotation = Annotation.Root({
   messages: Annotation({ reducer: messagesStateReducer, default: () => [] }),

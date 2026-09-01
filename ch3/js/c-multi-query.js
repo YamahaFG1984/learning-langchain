@@ -12,7 +12,7 @@ docker run \
 3. Use the connection string below for the postgres container
 */
 
-import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
@@ -32,7 +32,7 @@ const splitter = new RecursiveCharacterTextSplitter({
 const splitDocs = await splitter.splitDocuments(raw_docs);
 
 // embed each chunk and insert it into the vector store
-const model = new OpenAIEmbeddings();
+const model = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 
 const db = await PGVectorStore.fromDocuments(splitDocs, model, {
   postgresConnectionOptions: {
@@ -45,7 +45,7 @@ const retriever = db.asRetriever({ k: 2 });
 /**
  * Provide retrieved docs as context to the LLM to answer a user's question
  */
-const llm = new ChatOpenAI({ temperature: 0, modelName: 'gpt-3.5-turbo' });
+const llm = new ChatOpenAI({ temperature: 0, model: 'gpt-4.1-mini' });
 
 const perspectivesPrompt = ChatPromptTemplate.fromTemplate(
   `You are an AI language model assistant. Your task is to generate five different versions of the given user question to retrieve relevant documents from a vector database. By generating multiple perspectives on the user question, your goal is to help the user overcome some of the limitations of the distance-based similarity search. Provide these alternative questions separated by newlines. Original question: {question}`

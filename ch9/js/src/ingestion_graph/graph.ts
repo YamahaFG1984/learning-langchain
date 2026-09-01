@@ -3,10 +3,10 @@
  */
 import path from 'path';
 import fs from 'fs/promises';
-import { RunnableConfig } from '@langchain/core/runnables';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import { StateGraph, END, START } from '@langchain/langgraph';
 import { IndexStateAnnotation } from './state.js';
-import { DirectoryLoader } from 'langchain/document_loaders/fs/directory';
+import { DirectoryLoader } from '@langchain/classic/document_loaders/fs/directory';
 import {
   ensureIndexConfiguration,
   IndexConfigurationAnnotation,

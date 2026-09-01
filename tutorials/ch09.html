@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>部署：送上生产｜Learning LangChain 中文教程</title>
+<meta name="description" content="LangGraph Platform、Studio、Supabase 向量库与安全清单。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+  <a class="brand" href="index.html">
+    <span class="brand__mark">Learning LangChain</span>
+    <span class="brand__name">中文精读教程</span>
+    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
+  </a>
+  <div>
+    <h3>章节</h3>
+    <nav class="chapnav">
+    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
+    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
+    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
+    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
+    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
+    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
+    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
+    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
+    <a href="ch09.html" aria-current="page"><span class="num">09</span><span>部署：送上生产</span></a>
+    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
+    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
+    </nav>
+  </div>
+  <div>
+    <h3>本章目录</h3>
+    <nav class="toc">
+      <a href="#components">生产架构：四块拼图</a>
+      <a href="#datamodel">Platform 的四个数据模型</a>
+      <a href="#config">配置与本地调试</a>
+      <a href="#deploy">上线</a>
+      <a href="#security">安全清单</a>
+      <a href="#summary">小结</a>
+    </nav>
+  </div>
+</aside>
+<main class="main">
+<div class="wrap">
+  <div class="topbar">
+    <span class="crumb">第 09 章</span>
+    <div class="tools">
+      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
+      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
+      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
+    </div>
+  </div>
+<header class="chead">
+  <p class="eyebrow">第 09 章</p>
+  <h1>部署：送上生产</h1>
+  <p class="lede">在你的笔记本上跑得再好，用户也用不上。这一章把前八章的成果变成一个别人能访问的服务：需要哪些外部组件、LangGraph Platform 的数据模型是什么、怎么本地调试再上线，以及上线前必须过的安全清单。</p>
+</header>
+
+<div class="note">
+  <p class="note__title">读完这一章你会</p>
+  <ul style="margin-bottom:0">
+    <li>说清楚一个生产级 LangGraph 应用需要哪四块外部组件</li>
+    <li>理解 Assistant / Thread / Run / Cron 这四个数据模型的关系</li>
+    <li>写出 <code>langgraph.json</code>，用 <code>langgraph dev</code> 在本地起服务并调试</li>
+    <li>照着安全清单检查你的应用，尤其是权限范围和滥用防护</li>
+  </ul>
+</div>
+
+<h2 id="components">生产架构：四块拼图</h2>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 740 300" role="img" aria-label="生产架构：前端调用 LangGraph Platform，Platform 内含任务队列、服务器和 Postgres 检查点；它调用 LLM 提供商和向量库，并把追踪数据发给 LangSmith" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="i1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="16" y="120" width="106" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
+    <text x="69" y="142" text-anchor="middle" font-size="10.5" fill="currentColor">你的前端</text>
+    <text x="69" y="158" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">Web / App</text>
+
+    <line x1="126" y1="146" x2="176" y2="146" stroke="currentColor" stroke-width="1.4" marker-end="url(#i1)"/>
+    <text x="151" y="138" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".6">SDK</text>
+
+    <rect x="182" y="70" width="220" height="152" rx="8" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="292" y="92" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">LangGraph Platform</text>
+    <text x="292" y="107" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".6">托管的后端 API</text>
+    <rect x="196" y="118" width="86" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity=".65"/>
+    <text x="239" y="139" text-anchor="middle" font-size="8.5" fill="currentColor">水平扩展的服务器</text>
+    <rect x="298" y="118" width="90" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity=".65"/>
+    <text x="343" y="139" text-anchor="middle" font-size="8.5" fill="currentColor">任务队列</text>
+    <rect x="196" y="160" width="192" height="34" rx="4" fill="none" stroke="currentColor" stroke-width="1" opacity=".65"/>
+    <text x="292" y="176" text-anchor="middle" font-size="8.5" fill="currentColor">Postgres 检查点（线程 · 状态 · 历史）</text>
+    <text x="292" y="188" text-anchor="middle" font-size="8" fill="currentColor" opacity=".55">第 4 章那个 checkpointer，换成生产级实现</text>
+
+    <line x1="406" y1="110" x2="456" y2="90" stroke="currentColor" stroke-width="1.3" marker-end="url(#i1)"/>
+    <rect x="462" y="62" width="120" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="522" y="82" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">LLM 提供商</text>
+    <text x="522" y="97" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".65">OpenAI / Anthropic …</text>
+
+    <line x1="406" y1="146" x2="456" y2="146" stroke="currentColor" stroke-width="1.3" marker-end="url(#i1)"/>
+    <rect x="462" y="122" width="120" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="522" y="142" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">向量库</text>
+    <text x="522" y="157" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".65">Supabase（pgvector）</text>
+
+    <line x1="406" y1="182" x2="456" y2="204" stroke="currentColor" stroke-width="1.3" stroke-dasharray="4 3" marker-end="url(#i1)"/>
+    <rect x="462" y="184" width="120" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="522" y="204" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">LangSmith</text>
+    <text x="522" y="219" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".65">追踪 · 监控 · 评估</text>
+
+    <rect x="608" y="62" width="116" height="168" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"/>
+    <text x="666" y="84" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">.env 里的钥匙</text>
+    <text x="620" y="106" font-size="8.5" font-family="monospace" fill="currentColor" opacity=".75">OPENAI_API_KEY</text>
+    <text x="620" y="124" font-size="8.5" font-family="monospace" fill="currentColor" opacity=".75">SUPABASE_URL</text>
+    <text x="620" y="142" font-size="8.5" font-family="monospace" fill="currentColor" opacity=".75">SUPABASE_SERVICE_</text>
+    <text x="620" y="156" font-size="8.5" font-family="monospace" fill="currentColor" opacity=".75">ROLE_KEY</text>
+    <text x="620" y="176" font-size="8.5" font-family="monospace" fill="currentColor" opacity=".75">LANGCHAIN_API_KEY</text>
+    <text x="620" y="194" font-size="8.5" font-family="monospace" fill="currentColor" opacity=".75">LANGCHAIN_TRACING_V2</text>
+    <text x="666" y="216" text-anchor="middle" font-size="8" fill="currentColor" opacity=".55">部署时全部标记为 Secret</text>
+
+    <text x="370" y="270" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">Platform 帮你解决的是：并发调度、长任务后台化、状态持久化、double texting</text>
+  </svg>
+  </div>
+  <figcaption>LangSmith 那条是虚线，因为它不在请求主路径上——追踪数据是旁路发出的。</figcaption>
+</figure>
+
+<h3>向量库：Supabase 的三段 SQL</h3>
+
+<p>Supabase 就是托管的 Postgres。开通后在 SQL 编辑器里依次跑这三段：</p>
+
+<div class="shellblock">
+  <div class="codegroup__bar"><span class="codegroup__file">Supabase SQL 编辑器</span><span class="spacer"></span><button class="chip" data-copy type="button">复制</button></div>
+<pre><code><span class="c">-- ① 打开 pgvector 扩展</span>
+create extension vector;
+
+<span class="c">-- ② 建文档表；1536 维对应 OpenAI 的嵌入模型，换模型要改这个数</span>
+create table documents (
+  id bigserial primary key,
+  content text,          <span class="c">-- 对应 Document.page_content</span>
+  metadata jsonb,        <span class="c">-- 对应 Document.metadata</span>
+  embedding vector(1536)
+);
+
+<span class="c">-- ③ 相似度检索函数：先按 metadata 过滤，再按余弦距离排序取前 N 条</span>
+create function match_documents (
+  query_embedding vector(1536),
+  match_count int default null,
+  filter jsonb default '{}'
+) returns table (
+  id bigint, content text, metadata jsonb, embedding jsonb, similarity float
+)
+language plpgsql as $$
+#variable_conflict use_column
+begin
+  return query
+  select id, content, metadata, (embedding::text)::jsonb as embedding,
+         1 - (documents.embedding &lt;=&gt; query_embedding) as similarity
+  from documents
+  where metadata @&gt; filter
+  order by documents.embedding &lt;=&gt; query_embedding
+  limit match_count;
+end;
+$$;</code></pre>
+</div>
+
+<div class="note">
+  <p class="note__title">读懂那两个符号</p>
+  <p><code>&lt;=&gt;</code> 是 pgvector 的余弦距离运算符（越小越像），所以相似度写成 <code>1 - 距离</code>。<code>@&gt;</code> 是 JSONB 的「包含」运算符，用来做元数据过滤——正好对应第 3 章的 SelfQueryRetriever。</p>
+</div>
+
+<h2 id="datamodel">Platform 的四个数据模型</h2>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 700 250" role="img" aria-label="Assistant 是配置好的图实例；Thread 保存一组 Run 累积的状态；Run 是一次调用；Cron 按时间表自动创建 Thread 和 Run" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="i2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="16" y="60" width="140" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <text x="86" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Assistant</text>
+    <text x="86" y="99" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">= 编译好的图</text>
+    <text x="86" y="113" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">+ 一份配置和元数据</text>
+
+    <text x="86" y="152" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">同一张图可以有多个 Assistant，</text>
+    <text x="86" y="166" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">配置不同 → 行为不同</text>
+
+    <rect x="212" y="60" width="140" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <text x="282" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Thread</text>
+    <text x="282" y="99" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">一组 Run 累积的状态</text>
+    <text x="282" y="113" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">= 第 4 章的 thread_id</text>
+
+    <text x="282" y="152" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">某个时刻的状态快照</text>
+    <text x="282" y="166" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">叫 checkpoint，全部历史可取回</text>
+
+    <rect x="408" y="60" width="140" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <text x="478" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Run</text>
+    <text x="478" y="99" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">一次调用</text>
+    <text x="478" y="113" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">有自己的输入和配置</text>
+
+    <text x="478" y="152" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">可以挂在 Thread 上（有记忆），</text>
+    <text x="478" y="166" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">也可以无状态跑完即弃</text>
+
+    <line x1="160" y1="95" x2="206" y2="95" stroke="currentColor" stroke-width="1.2" marker-end="url(#i2)"/>
+    <text x="183" y="86" text-anchor="middle" font-size="8" fill="currentColor" opacity=".55">运行于</text>
+    <line x1="356" y1="95" x2="402" y2="95" stroke="currentColor" stroke-width="1.2" marker-end="url(#i2)"/>
+    <text x="379" y="86" text-anchor="middle" font-size="8" fill="currentColor" opacity=".55">承载</text>
+
+    <rect x="576" y="60" width="110" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3"/>
+    <text x="631" y="82" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Cron</text>
+    <text x="631" y="99" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">定时自动创建</text>
+    <text x="631" y="113" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".72">Thread + Run</text>
+    <path d="M 631 56 L 631 34 L 478 34 L 478 56" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#i2)"/>
+
+    <text x="350" y="212" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".68">一句话记忆：<tspan font-weight="600">Assistant 是「谁」，Thread 是「跟谁的哪段对话」，Run 是「这一次」。</tspan></text>
+  </svg>
+  </div>
+  <figcaption>这四个概念直接对应 Platform API 的四组端点。</figcaption>
+</figure>
+
+<p>除了数据模型，Platform 还提供五种能力：<strong>流式</strong>（values / messages / updates / events / debug 五种模式）、<strong>人在环路</strong>、<strong>double texting</strong>（第 8 章那四种策略：reject / enqueue / interrupt / rollback）、<strong>无状态运行</strong>、<strong>Webhook 完成通知</strong>。</p>
+
+<h2 id="config">配置与本地调试</h2>
+
+<p>上线前需要一个 <code>langgraph.json</code>，告诉 Platform 你的图在哪：</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch9/{py,js}/langgraph.json</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code>{
+  <span class="s">"dependencies"</span>: [<span class="s">"."</span>],
+  <span class="s">"graphs"</span>: {
+    <span class="s">"indexer"</span>: <span class="s">"./src/ingestion_graph/graph.py:graph"</span>,
+    <span class="s">"retrieval_graph"</span>: <span class="s">"./src/retrieval_graph/graph.py:graph"</span>
+  },
+  <span class="s">"env"</span>: <span class="s">"../../.env"</span>
+}
+
+<span class="c"># graphs 的值格式：文件路径:变量名</span>
+<span class="c"># 这个变量必须是编译后的图（builder.compile() 的返回值）</span>
+<span class="c"># langgraph.json 要放在与图文件同级或更上层的目录</span></code></pre></div>
+  <div data-lang="js"><pre><code>{
+  <span class="s">"node_version"</span>: <span class="s">"20"</span>,
+  <span class="s">"graphs"</span>: {
+    <span class="s">"ingestion_graph"</span>: <span class="s">"./src/ingestion_graph/graph.ts:graph"</span>,
+    <span class="s">"retrieval_graph"</span>: <span class="s">"./src/retrieval_graph/graph.ts:graph"</span>
+  },
+  <span class="s">"env"</span>: <span class="s">"../../.env"</span>,
+  <span class="s">"dependencies"</span>: [<span class="s">"."</span>]
+}</code></pre></div>
+</div>
+
+<div class="shellblock">
+  <div class="codegroup__bar"><span class="codegroup__file">本地起服务</span><span class="spacer"></span><button class="chip" data-copy type="button">复制</button></div>
+<pre><code><span class="c"># Python（需要 3.11+）</span>
+pip install -U "langgraph-cli[inmem]"
+langgraph dev
+
+<span class="c"># JavaScript</span>
+npm i @langchain/langgraph-cli
+npx @langchain/langgraph-cli dev -c ch9/js/langgraph.json
+
+<span class="c"># 成功后会看到：</span>
+<span class="c">#   API:  http://localhost:2024</span>
+<span class="c">#   Docs: http://localhost:2024/docs      ← 完整的 API 文档</span>
+<span class="c"># 并自动打开 LangGraph Studio（可视化调试器）</span></code></pre>
+</div>
+
+<p>本地服务起来后，用 SDK 调用它，和调用线上部署完全一样：</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch9/{py,js}/demo</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py" class="is-shown"><pre><code><span class="k">import</span> asyncio
+
+<span class="k">from</span> langgraph_sdk <span class="k">import</span> get_client
+
+
+<span class="k">async</span> <span class="k">def</span> <span class="f">main</span>():
+    client = <span class="f">get_client</span>(url=<span class="s">"http://localhost:2024"</span>)   <span class="c"># 换成线上 URL 即可上生产</span>
+
+    thread = <span class="k">await</span> client.threads.<span class="f">create</span>(metadata={<span class="s">"user_id"</span>: <span class="s">"example_user"</span>})
+
+    <span class="k">async</span> <span class="k">for</span> event <span class="k">in</span> client.runs.<span class="f">stream</span>(
+        thread_id=thread[<span class="s">"thread_id"</span>],
+        assistant_id=<span class="s">"retrieval_graph"</span>,          <span class="c"># 就是 langgraph.json 里的 key</span>
+        input={<span class="s">"query"</span>: <span class="s">"这份文档在讲什么？"</span>},
+        stream_mode=<span class="s">"updates"</span>,
+    ):
+        <span class="f">print</span>(event.event, event.data)
+
+
+asyncio.<span class="f">run</span>(<span class="f">main</span>())</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { Client } <span class="k">from</span> <span class="s">'@langchain/langgraph-sdk'</span>;
+
+<span class="k">const</span> client = <span class="k">new</span> <span class="f">Client</span>();          <span class="c">// 默认连 http://localhost:2024</span>
+
+<span class="k">const</span> thread = <span class="k">await</span> client.threads.<span class="f">create</span>();
+
+<span class="k">const</span> streamResponse = client.runs.<span class="f">stream</span>(thread.thread_id, <span class="s">'retrieval_graph'</span>, {
+  input: { query: <span class="s">'这份文档在讲什么？'</span> },
+  streamMode: <span class="s">'updates'</span>,
+});
+
+<span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> chunk <span class="k">of</span> streamResponse) {
+  console.<span class="f">log</span>(chunk.event, chunk.data);
+}</code></pre></div>
+</div>
+
+<div class="note note--v1">
+  <p class="note__title">1.x 变更（仓库中的 ch9 模板）</p>
+  <ul style="margin-bottom:0">
+    <li><code>StateGraph(..., config_schema=X)</code> → <code>context_schema=X</code>（<code>from_runnable_config</code> 读 <code>config["configurable"]</code> 的写法仍然有效）</li>
+    <li><code>from langchain.hub import pull</code> → <code>from langchain_classic.hub import pull</code></li>
+    <li>修正了 <code>retrieve_documents</code>：<code>make_retriever</code> 是上下文管理器，必须用 <code>with</code>；且它接收的是 <code>RunnableConfig</code> 而不是配置对象</li>
+    <li>修正了路由 schema：<code>route: str = Literal[...]</code> 写法有误，应为 <code>route: Literal["retrieve", "direct"]</code></li>
+  </ul>
+</div>
+
+<h2 id="deploy">上线</h2>
+
+<ol>
+  <li>把仓库推到 GitHub。</li>
+  <li>LangSmith → <strong>Deployments</strong> → <strong>New Deployment</strong>（需要 Plus 套餐；也可以选自托管，但要自己维护 Postgres 和 Redis）。</li>
+  <li>用 GitHub OAuth 授权，选仓库和分支，填 <code>langgraph.json</code> 的路径。</li>
+  <li>Development type 选 <strong>Production</strong>（约 500 req/s，高可用存储 + 自动备份）。</li>
+  <li>逐条填环境变量，<strong>凡是密钥都勾上 Secret</strong>。</li>
+  <li>提交，等构建完成，得到一个 revision。</li>
+</ol>
+
+<p>之后每次改动点 <strong>New Revision</strong>。构建和部署日志在 Revisions → Deploy 里；因为和 LangSmith 打通，用量、错误率、延迟、token 成本都在同一个面板上看。</p>
+
+<div class="note">
+  <p class="note__title">LangGraph Studio</p>
+  <p>它是给 Agent 用的 IDE：可视化图结构、单次调用的完整轨迹、<strong>中途修改某个节点的输出再继续跑</strong>、编辑线程状态、触发人在环路。第 8 章讲的那些能力，Studio 给了图形界面。</p>
+</div>
+
+<h2 id="security">安全清单</h2>
+
+<p>三条原则，配三个具体场景：</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 720 230" role="img" aria-label="三条安全原则与三类风险场景的对应关系：限制权限、预设会被滥用、纵深防御，分别应用于文件、API、数据库访问" xmlns="http://www.w3.org/2000/svg">
+    <text x="16" y="20" font-size="11" font-weight="600" fill="currentColor">三条原则</text>
+    <rect x="16" y="30" width="200" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="28" y="48" font-size="10" font-weight="600" fill="currentColor">① 限制权限</text>
+    <text x="28" y="64" font-size="8.5" fill="currentColor" opacity=".72">只读凭据 · 禁访敏感资源 · 沙箱</text>
+
+    <rect x="16" y="84" width="200" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="28" y="102" font-size="10" font-weight="600" fill="currentColor">② 假设会被滥用</text>
+    <text x="28" y="118" font-size="8.5" fill="currentColor" opacity=".72">权限允许的事，就当它一定会发生</text>
+
+    <rect x="16" y="138" width="200" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="28" y="156" font-size="10" font-weight="600" fill="currentColor">③ 纵深防御</text>
+    <text x="28" y="172" font-size="8.5" fill="currentColor" opacity=".72">别指望单层防护，要叠加</text>
+
+    <line x1="248" y1="20" x2="248" y2="200" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <text x="272" y="20" font-size="11" font-weight="600" fill="currentColor">三类场景</text>
+    <rect x="272" y="30" width="432" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".8"/>
+    <text x="284" y="48" font-size="10" font-weight="600" fill="currentColor">文件访问</text>
+    <text x="284" y="64" font-size="8.5" fill="currentColor" opacity=".75">风险：删不该删的、读不该读的 → 限定目录 + 白名单 + 容器隔离</text>
+
+    <rect x="272" y="84" width="432" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".8"/>
+    <text x="284" y="102" font-size="10" font-weight="600" fill="currentColor">API 访问</text>
+    <text x="284" y="118" font-size="8.5" fill="currentColor" opacity=".75">风险：写入恶意数据、删除线上数据 → 只读 key + 只开放幂等端点</text>
+
+    <rect x="272" y="138" width="432" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".8"/>
+    <text x="284" y="156" font-size="10" font-weight="600" fill="currentColor">数据库访问</text>
+    <text x="284" y="172" font-size="8.5" fill="currentColor" opacity=".75">风险：DROP TABLE、改 schema → 只读账号 + 只授权必要的表（见第 3 章）</text>
+
+    <text x="360" y="216" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">注意：这些都是<tspan font-weight="600">权限层</tspan>的防护，不是提示词层的。提示词是防不住的。</text>
+  </svg>
+  </div>
+  <figcaption>安全的底线在权限配置，不在提示词里写「请不要删除数据」。</figcaption>
+</figure>
+
+<h3>还要防滥用（也就是防账单爆炸）</h3>
+
+<div class="grid2">
+  <div class="card"><p class="card__meta">第一道</p><h4>账号验证</h4><p>邮箱或手机验证，挡住脚本批量注册。</p></div>
+  <div class="card"><p class="card__meta">第二道</p><h4>限流</h4><p>中间件里统计每个用户近 X 分钟的请求数，超了就冷却或封禁。</p></div>
+  <div class="card"><p class="card__meta">第三道</p><h4>提示注入护栏</h4><p>假设用户会尝试诱导模型泄露数据或做无关的事。提示要写得具体且强约束，权限也要相应收紧。</p></div>
+</div>
+
+<h2 id="summary">小结</h2>
+
+<p>部署这一步真正的工作量不在「点部署按钮」，而在<strong>把本地代码改造成能被托管的形态</strong>：图必须是模块级可导入的变量，配置必须能从环境读，依赖必须写清楚，密钥必须不在代码里。<code>langgraph.json</code> 就是这份契约。</p>
+
+<p>上线只是开始。下一章讲怎么知道它跑得好不好，以及怎么持续改进。</p>
+
+<nav class="pager">
+  <a href="ch08.html"><span class="dir">上一章</span><span class="ttl">08 · 榨干 LLM 的实用模式</span></a>
+  <a class="next" href="ch10.html"><span class="dir">下一章</span><span class="ttl">10 · 测试：评估、监控与改进</span></a>
+</nav>
+</div>
+</main>
+</div>
+<script src="assets/course.js"></script>
+</body>
+</html>

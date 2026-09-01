@@ -4,8 +4,69 @@ This repository contains code examples (in python and javascript) from each chap
 
 To run the examples, you can clone the repository and run the examples in your preferred language folders.
 
+---
+
+## 📚 中文图解教程（tutorials/）
+
+本仓库附带一套全 11 章的中文精读教程，逐章讲解概念、配大量机制图，并给出与本仓库代码一一对应的可运行示例。
+
+在本地打开 [`tutorials/index.html`](tutorials/index.html) 即可阅读（纯静态页面，无需任何构建步骤）：
+
+```bash
+# macOS
+open tutorials/index.html
+# Linux
+xdg-open tutorials/index.html
+# 或者起一个本地服务器
+python -m http.server 8000 --directory tutorials
+```
+
+页面右上角可以切换 Python / JavaScript 代码，以及亮色 / 暗色主题（选择会记住）。字体走 Google Fonts，离线时自动回退到系统字体。
+
+想改内容的话：正文片段在 `tutorials/_src/`，页面外壳（导航、翻页、目录）由 `tutorials/build.py` 统一生成——
+
+```bash
+python tutorials/build.py          # 全部重建
+python tutorials/build.py ch03     # 只重建第 3 章
+```
+
+## ⬆️ Upgraded to LangChain 1.x / LangGraph 1.x
+
+The book was written against LangChain 0.2/0.3. All code in this repository has been
+migrated to **LangChain 1.x and LangGraph 1.x**, and verified to import cleanly against
+the current releases. The most important changes:
+
+| Book (0.3) | Now (1.x) |
+| --- | --- |
+| `langchain.indexes` | `langchain_classic.indexes` |
+| `langchain.chains.*` | `langchain_classic.chains.*` |
+| `langchain.retrievers.*` | `langchain_classic.retrievers.*` |
+| `langchain.storage.InMemoryStore` | `langchain_core.stores.InMemoryStore` |
+| `langchain.utils.math` | `langchain_classic.utils.math` |
+| `langchain.hub` | `langchain_classic.hub` |
+| `langchain.schema` / `langchain.text_splitter` | `langchain_core.messages` / `langchain_text_splitters` |
+| `langchain_core.pydantic_v1` | `pydantic` |
+| `MemorySaver` | `InMemorySaver` |
+| `StateGraph(S, input=…, output=…)` | `StateGraph(S, input_schema=…, output_schema=…)` |
+| `StateGraph(S, config_schema=…)` | `StateGraph(S, context_schema=…)` |
+| `retriever.get_relevant_documents(q)` | `retriever.invoke(q)` |
+| `duckduckgo-search` | `ddgs` |
+| JS: `langchain/<deep/path>` | `@langchain/classic/<deep/path>` |
+
+Model names were also refreshed (`gpt-3.5-turbo` → `gpt-4.1-mini`, `gpt-4`/`gpt-4o` → `gpt-4.1`,
+embeddings pinned to `text-embedding-3-small`). A handful of book snippets that could not run
+as printed were fixed as well — most notably the Chapter 7 supervisor graph, the Chapter 7
+subgraph example (missing `START` edge), the Chapter 8 examples (which were empty stubs and are
+now complete, runnable programs sharing `ch8/py/agent.py`), and two Chapter 10 bugs.
+
+**Python 3.10+ is now required.**
+
+---
+
 ## Table of Contents
 
+- [中文图解教程](#-中文图解教程tutorials)
+- [Upgraded to LangChain 1.x](#️-upgraded-to-langchain-1x--langgraph-1x)
 - [Quick Start](#quick-start)
   - [Environment variables setup](#environment-variables-setup)
   - [Running the chapter examples](#running-the-chapter-examples)
@@ -47,7 +108,7 @@ If you want to run the production example in chapter 9, you need a Supabase acco
 
 #### For Python examples:
 
-If you haven't installed Python on your system, install it first as per the instructions [here](https://www.python.org/downloads/).
+If you haven't installed Python on your system, install it first as per the instructions [here](https://www.python.org/downloads/). **Python 3.10 or newer is required** (3.11+ if you want to run the LangGraph dev server in Chapter 9).
 
 1. Create a virtual environment:
 ```bash
@@ -214,19 +275,13 @@ npm run langgraph:dev
 ```
 
 ##### For Python:
-You have two options:
-
-1. Using the CLI directly:
 ```bash
+pip install -U "langgraph-cli[inmem]"      # requires Python 3.11+
 langgraph dev -c ch9/py/langgraph.json --verbose
 ```
 
-2. Using the installed script command:
-```bash
-langgraph-dev
-```
-
-Note: To use the script command, make sure you have installed the package in development mode (`pip install -e .`).
+The server starts on <http://localhost:2024>; its OpenAPI docs live at `/docs`, and LangGraph
+Studio opens automatically.
 
 ### Chapter 10: Evaluation
 

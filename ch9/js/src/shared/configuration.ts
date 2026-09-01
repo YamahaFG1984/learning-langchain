@@ -3,7 +3,7 @@
  */
 
 import { Annotation } from '@langchain/langgraph';
-import { RunnableConfig } from '@langchain/core/runnables';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 /**
  * typeof ConfigurationAnnotation.State class for indexing and retrieval operations.

@@ -12,7 +12,7 @@ docker run \
 3. Use the connection string below for the postgres container
 */
 
-import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
@@ -31,7 +31,7 @@ const splitter = new RecursiveCharacterTextSplitter({
 const splitDocs = await splitter.splitDocuments(raw_docs);
 
 // embed each chunk and insert it into the vector store
-const model = new OpenAIEmbeddings();
+const model = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 
 const db = await PGVectorStore.fromDocuments(splitDocs, model, {
   postgresConnectionOptions: {
@@ -59,7 +59,7 @@ const prompt = ChatPromptTemplate.fromTemplate(
   'Answer the question based only on the following context:\n {context}\n\nQuestion: {question}'
 );
 
-const llm = new ChatOpenAI({ temperature: 0, modelName: 'gpt-3.5-turbo' });
+const llm = new ChatOpenAI({ temperature: 0, model: 'gpt-4.1-mini' });
 const chain = prompt.pipe(llm);
 
 const result = await chain.invoke({

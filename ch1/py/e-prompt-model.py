@@ -11,7 +11,7 @@ Question: {question}
 
 Answer: """)
 
-model = ChatOpenAI(model="gpt-3.5-turbo")
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 # `prompt` and `completion` are the results of using template and model once
 

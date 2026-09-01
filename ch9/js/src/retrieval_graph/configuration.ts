@@ -3,7 +3,7 @@ import {
   BaseConfigurationAnnotation,
   ensureBaseConfiguration,
 } from '../shared/configuration.js';
-import { RunnableConfig } from '@langchain/core/runnables';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 export const AgentConfigurationAnnotation = Annotation.Root({
   ...BaseConfigurationAnnotation.spec,
@@ -31,6 +31,6 @@ export function ensureAgentConfiguration(
   const baseConfig = ensureBaseConfiguration(config);
   return {
     ...baseConfig,
-    queryModel: configurable.queryModel || 'openai/gpt-4o',
+    queryModel: configurable.queryModel || 'openai/gpt-4.1',
   };
 }

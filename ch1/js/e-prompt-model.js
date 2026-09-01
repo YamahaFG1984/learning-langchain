@@ -1,8 +1,11 @@
 import { PromptTemplate } from '@langchain/core/prompts';
-import { OpenAI } from '@langchain/openai';
+import { ChatOpenAI } from '@langchain/openai';
 
-const model = new OpenAI({
-  model: 'gpt-3.5-turbo',
+// The book uses the plain `OpenAI` (text-completion) class here. That API is
+// legacy: only `gpt-3.5-turbo-instruct` still speaks it. Modern models are all
+// chat models, so use ChatOpenAI -- a prompt template pipes into either one.
+const model = new ChatOpenAI({
+  model: 'gpt-4.1-mini',
 });
 const template =
   PromptTemplate.fromTemplate(`Answer the question based on the context below. If the question cannot be answered using the information provided, answer with "I don't know".

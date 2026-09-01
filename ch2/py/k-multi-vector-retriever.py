@@ -8,13 +8,13 @@ from pydantic import BaseModel
 from langchain_core.runnables import RunnablePassthrough
 from langchain_openai import ChatOpenAI
 from langchain_core.documents import Document
-from langchain.retrievers.multi_vector import MultiVectorRetriever
-from langchain.storage import InMemoryStore
+from langchain_classic.retrievers.multi_vector import MultiVectorRetriever
+from langchain_core.stores import InMemoryStore
 import uuid
 
 connection = "postgresql+psycopg://langchain:langchain@localhost:6024/langchain"
 collection_name = "summaries"
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 # Load the document
 loader = TextLoader("./test.txt", encoding="utf-8")
 docs = loader.load()
@@ -28,7 +28,7 @@ chunks = splitter.split_documents(docs)
 prompt_text = "Summarize the following document:\n\n{doc}"
 
 prompt = ChatPromptTemplate.from_template(prompt_text)
-llm = ChatOpenAI(temperature=0, model="gpt-3.5-turbo")
+llm = ChatOpenAI(temperature=0, model="gpt-4.1-mini")
 summarize_chain = {
     "doc": lambda x: x.page_content} | prompt | llm | StrOutputParser()
 

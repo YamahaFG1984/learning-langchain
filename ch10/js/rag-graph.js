@@ -1,7 +1,7 @@
 import { Annotation, StateGraph } from '@langchain/langgraph';
 import { CheerioWebBaseLoader } from '@langchain/community/document_loaders/web/cheerio';
-import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
+import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
 import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import * as hub from 'langchain/hub';
 import { StringOutputParser } from '@langchain/core/output_parsers';
@@ -43,7 +43,7 @@ const indexing = async (state) => {
 
   const docSplits = await textSplitter.splitDocuments(state.scrapedDocuments);
 
-  const vectorstore = new MemoryVectorStore(new OpenAIEmbeddings());
+  const vectorstore = new MemoryVectorStore(new OpenAIEmbeddings({ model: 'text-embedding-3-small' }));
 
   await vectorstore.addDocuments(docSplits);
 
@@ -59,7 +59,7 @@ const retrieveAndGenerate = async (state) => {
 
   const prompt = await hub.pull('rlm/rag-prompt');
 
-  const llm = new ChatOpenAI({ model: 'gpt-3.5-turbo', temperature: 0 });
+  const llm = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 });
 
   const docs = await retriever.invoke(question);
 

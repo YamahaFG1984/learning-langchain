@@ -10,7 +10,7 @@ template = ChatPromptTemplate.from_messages(
     ]
 )
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 # combine them with the | operator
 

@@ -6,7 +6,7 @@ prompt = ChatPromptTemplate.from_messages([
     ("placeholder", "{messages}"),
 ])
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 chain = prompt | model
 

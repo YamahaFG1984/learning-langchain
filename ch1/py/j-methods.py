@@ -1,6 +1,6 @@
 from langchain_openai.chat_models import ChatOpenAI
 
-model = ChatOpenAI(model="gpt-3.5-turbo")
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 completion = model.invoke("Hi there!")
 # Hi!

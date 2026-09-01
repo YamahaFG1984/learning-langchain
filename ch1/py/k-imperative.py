@@ -11,7 +11,7 @@ template = ChatPromptTemplate.from_messages(
     ]
 )
 
-model = ChatOpenAI(model="gpt-3.5-turbo")
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 # combine them in a function
 # @chain decorator adds the same Runnable interface for any function you write

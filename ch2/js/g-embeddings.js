@@ -1,6 +1,6 @@
 import { OpenAIEmbeddings } from '@langchain/openai';
 
-const model = new OpenAIEmbeddings();
+const model = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 const embeddings = await model.embedDocuments([
   'Hi there!',
   'Oh, hello!',

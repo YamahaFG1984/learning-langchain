@@ -5,7 +5,7 @@ from langgraph.graph.message import add_messages
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 
 class State(TypedDict):

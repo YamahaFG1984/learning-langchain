@@ -13,7 +13,7 @@ const config = {
   },
 };
 
-const llm = new ChatOpenAI({ model: 'gpt-4o-mini', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 });
 
 const predictSQLAgentAnswer = traceable(async (example) => {
   const messages = await graph.invoke(

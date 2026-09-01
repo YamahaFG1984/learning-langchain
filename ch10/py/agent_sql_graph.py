@@ -1,3 +1,5 @@
+import sqlite3
+
 from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.graph import END, StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
@@ -10,18 +12,18 @@ import json
 from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_core.messages import AIMessage
 from langchain_core.prompts import ChatPromptTemplate
-from langchain.agents import tool
+from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI
 from langchain_community.utilities import SQLDatabase
 
 db = SQLDatabase.from_uri("sqlite:///Chinook.db")
 print(db.dialect)
 print(db.get_usable_table_names())
-db.run("SELECT * FROM Artist LIMIT 10;")
+print(db.run("SELECT * FROM Artist LIMIT 10;"))
 # gpt4o
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
-experiment_prefix = "sql-agent-gpt4o"
-metadata = "Chinook, gpt-4o agent"
+llm = ChatOpenAI(model="gpt-4.1", temperature=0)
+experiment_prefix = "sql-agent-gpt41"
+metadata = "Chinook, gpt-4.1 agent"
 # SQL toolkit
 toolkit = SQLDatabaseToolkit(db=db, llm=llm)
 tools = toolkit.get_tools()
@@ -187,6 +189,9 @@ builder.add_conditional_edges(
 )
 builder.add_edge("tools", "assistant")
 
-# The checkpointer lets the graph persist its state
-memory = SqliteSaver.from_conn_string(":memory:")
+# The checkpointer lets the graph persist its state.
+# `SqliteSaver.from_conn_string` is a context manager in langgraph >= 0.3, so
+# build the connection ourselves to keep the saver alive for the whole module.
+conn = sqlite3.connect(":memory:", check_same_thread=False)
+memory = SqliteSaver(conn)
 graph = builder.compile(checkpointer=memory)

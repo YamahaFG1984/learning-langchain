@@ -13,7 +13,7 @@ import { ChatOpenAI } from "@langchain/openai";
 const search = new DuckDuckGoSearch();
 const calculator = new Calculator();
 const tools = [search, calculator];
-const model = new ChatOpenAI({ temperature: 0.1 }).bindTools(tools);
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0.1 }).bindTools(tools);
 
 const annotation = Annotation.Root({
   messages: Annotation({ reducer: messagesStateReducer, default: () => [] }),

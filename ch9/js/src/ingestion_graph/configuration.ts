@@ -1,5 +1,5 @@
 import { Annotation } from '@langchain/langgraph';
-import { RunnableConfig } from '@langchain/core/runnables';
+import type { RunnableConfig } from '@langchain/core/runnables';
 
 // This path points to the directory containing the documents to index.
 const DEFAULT_DOCS_PATH = 'src/sample_docs.json';

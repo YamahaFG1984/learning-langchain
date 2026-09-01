@@ -23,7 +23,7 @@ const messages = [
 const trimmer = trimMessages({
   maxTokens: 65,
   strategy: "last",
-  tokenCounter: new ChatOpenAI({ modelName: "gpt-4o" }),
+  tokenCounter: new ChatOpenAI({ model: "gpt-4.1" }),
   includeSystem: true,
   allowPartial: false,
   startOn: "human",

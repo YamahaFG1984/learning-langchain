@@ -9,7 +9,7 @@ import { Document } from '@langchain/core/documents';
 
 // LLM setup
 const prompt = await hub.pull('rlm/rag-prompt');
-const llm = new ChatOpenAI({ modelName: 'gpt-4', temperature: 0 }); // Fixed model name
+const llm = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 });
 const ragChain = prompt.pipe(llm).pipe(new StringOutputParser());
 const webSearchTool = new DuckDuckGoSearch();
 // Question rewriting prompt

@@ -10,7 +10,7 @@ const template = ChatPromptTemplate.fromMessages([
 ]);
 
 const model = new ChatOpenAI({
-  model: 'gpt-3.5-turbo',
+  model: 'gpt-4.1-mini',
 });
 
 // combine them in a function

@@ -22,13 +22,13 @@ async def ingest_docs(state: IndexState, config: Optional[RunnableConfig] = None
     else:
         docs = reduce_docs([], docs)
 
-    with make_retriever(configuration) as retriever:
+    with make_retriever(config) as retriever:
         await retriever.aadd_documents(docs)
 
     return {"docs": "delete"}
 
 # Define the graph
-builder = StateGraph(IndexState, config_schema=IndexConfiguration)
+builder = StateGraph(IndexState, context_schema=IndexConfiguration)
 builder.add_node(ingest_docs)
 builder.add_edge(START, "ingest_docs")
 builder.add_edge("ingest_docs", END)

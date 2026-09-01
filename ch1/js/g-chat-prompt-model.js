@@ -1,7 +1,7 @@
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { ChatOpenAI } from '@langchain/openai';
 
-const model = new ChatOpenAI();
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 const template = ChatPromptTemplate.fromMessages([
   [
     'system',

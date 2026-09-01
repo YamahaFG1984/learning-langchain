@@ -1,14 +1,12 @@
-from contextlib import contextmanager
 import os
+from contextlib import contextmanager
+
+import chromadb
 from langchain_chroma import Chroma
+from langchain_community.vectorstores import SupabaseVectorStore
 from langchain_core.embeddings import Embeddings
 from langchain_core.runnables import RunnableConfig
-from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import SupabaseVectorStore
-from langchain_chroma import Chroma
 from supabase import create_client
-import chromadb
-
 
 from ingestion_graph.configuration import IndexConfiguration
 
@@ -24,7 +22,7 @@ def make_text_encoder(model: str) -> Embeddings:
 
 
 @contextmanager
-def make_supabase_retriever(configuration: RunnableConfig, embedding_model: Embeddings):
+def make_supabase_retriever(configuration: IndexConfiguration, embedding_model: Embeddings):
     supabase_url = os.environ.get("SUPABASE_URL")
     supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY")
 
@@ -69,6 +67,6 @@ def make_retriever(
     else:
         raise ValueError(
             "Unrecognized retriever_provider in configuration. "
-            f"Expected one of: {', '.join(Configuration.__annotations__['retriever_provider'].__args__)}\n"
+            "Expected one of: supabase, chroma\n"
             f"Got: {configuration.retriever_provider}"
         )

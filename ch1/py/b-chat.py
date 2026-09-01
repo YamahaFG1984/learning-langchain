@@ -1,7 +1,7 @@
 from langchain_openai.chat_models import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 prompt = [HumanMessage("What is the capital of France?")]
 
 response = model.invoke(prompt)

@@ -7,7 +7,7 @@ const physicsTemplate = `You are a very smart physics professor. You are great  
 
 const mathTemplate = `You are a very good mathematician. You are great at answering     math questions. You are so good because you are able to break down hard     problems into their component parts, answer the component parts, and then     put them together to answer the broader question. Here is a question: {query}`;
 
-const embeddings = new OpenAIEmbeddings();
+const embeddings = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 
 const promptTemplates = [physicsTemplate, mathTemplate];
 
@@ -28,7 +28,7 @@ const promptRouter = RunnableLambda.from(async (query) => {
 });
 
 const semanticRouter = promptRouter.pipe(
-  new ChatOpenAI({ modelName: 'gpt-3.5-turbo', temperature: 0 })
+  new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 })
 );
 
 const result = await semanticRouter.invoke('What is a black hole');

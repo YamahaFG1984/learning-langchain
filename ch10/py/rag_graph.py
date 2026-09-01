@@ -1,11 +1,11 @@
 from typing import List, TypedDict
 from langchain_community.document_loaders import WebBaseLoader
-from langchain.schema import Document
+from langchain_core.documents import Document
 from langgraph.graph import END, StateGraph, START
 from langchain_community.vectorstores import InMemoryVectorStore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
-from langchain import hub
+from langchain_classic import hub
 from langchain_openai import ChatOpenAI
 
 
@@ -54,7 +54,7 @@ def indexing(state):
 # Add to vectorDB
     vectorstore = InMemoryVectorStore.from_documents(
         documents=doc_splits,
-        embedding=OpenAIEmbeddings(),
+        embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
     )
     return {"vectorstore": vectorstore}
 
@@ -69,7 +69,7 @@ def retrieve_and_generate(state):
     retriever = vectorstore.as_retriever()
 
     prompt = hub.pull("rlm/rag-prompt")
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+    llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
 
     # fetch relevant documents
     docs = retriever.invoke(question)  # format prompt

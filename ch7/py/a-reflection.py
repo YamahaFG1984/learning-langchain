@@ -11,7 +11,7 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
 # Initialize chat model
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 
 # Define state type

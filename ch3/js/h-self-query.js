@@ -1,9 +1,9 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { SelfQueryRetriever } from 'langchain/retrievers/self_query';
+import { SelfQueryRetriever } from '@langchain/classic/retrievers/self_query';
 import { FunctionalTranslator } from '@langchain/core/structured_query';
-import { MemoryVectorStore } from 'langchain/vectorstores/memory';
-import { Document } from 'langchain/document';
-import { AttributeInfo } from 'langchain/chains/query_constructor';
+import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
+import { Document } from '@langchain/core/documents';
+import { AttributeInfo } from '@langchain/classic/chains/query_constructor';
 import { OpenAIEmbeddings } from '@langchain/openai';
 /**
  * First, we create a bunch of documents. You can load your own documents here instead.
@@ -60,9 +60,9 @@ const docs = [
   }),
 ];
 
-const llm = new ChatOpenAI({ modelName: 'gpt-3.5-turbo', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 });
 
-const embeddings = new OpenAIEmbeddings();
+const embeddings = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 
 const vectorStore = await MemoryVectorStore.fromDocuments(docs, embeddings);
 

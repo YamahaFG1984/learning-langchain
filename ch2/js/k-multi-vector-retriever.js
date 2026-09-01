@@ -1,9 +1,9 @@
 import * as uuid from 'uuid';
-import { MultiVectorRetriever } from 'langchain/retrievers/multi_vector';
+import { MultiVectorRetriever } from '@langchain/classic/retrievers/multi_vector';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { InMemoryStore } from '@langchain/core/stores';
-import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text';
 import { Document } from '@langchain/core/documents';
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
 import { ChatOpenAI } from '@langchain/openai';
@@ -27,7 +27,7 @@ const prompt = PromptTemplate.fromTemplate(
   `Summarize the following document:\n\n{doc}`
 );
 
-const llm = new ChatOpenAI({ modelName: 'gpt-3.5-turbo' });
+const llm = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 
 const chain = RunnableSequence.from([
   { doc: (doc) => doc.pageContent },
@@ -60,7 +60,7 @@ const byteStore = new InMemoryStore();
 // vector store for the summaries
 const vectorStore = await PGVectorStore.fromDocuments(
   docs,
-  new OpenAIEmbeddings(),
+  new OpenAIEmbeddings({ model: 'text-embedding-3-small' }),
   {
     postgresConnectionOptions: {
       connectionString,

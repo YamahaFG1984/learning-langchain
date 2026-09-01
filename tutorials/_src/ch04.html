@@ -1,0 +1,489 @@
+<header class="chead">
+  <p class="eyebrow">第 04 章</p>
+  <h1>用 LangGraph 给机器人加记忆</h1>
+  <p class="lede">大模型是无状态的：每次调用它都不记得上一次说过什么。所谓「记忆」，其实就是你每次都把之前的对话重新递给它。这一章讲怎么把这件事做得靠谱——并顺便认识贯穿后半本书的 LangGraph。</p>
+</header>
+
+<div class="note">
+  <p class="note__title">读完这一章你会</p>
+  <ul style="margin-bottom:0">
+    <li>理解「记忆」的本质，以及朴素做法在生产中会碰到的四个问题</li>
+    <li>用 <code>StateGraph</code> 的状态 / 节点 / 边三件套搭出第一个图</li>
+    <li>用 checkpointer + <code>thread_id</code> 让多个用户的对话互不串台</li>
+    <li>用 <code>trim / filter / merge</code> 三个工具整理聊天记录</li>
+  </ul>
+</div>
+
+<h2 id="naive">记忆的本质：把历史再发一遍</h2>
+
+<p>先看最朴素的版本。<code>("placeholder", "{messages}")</code> 是一个可以塞进任意条消息的占位槽：</p>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch4/{py,js}/a-simple-memory</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py"><pre><code><span class="k">from</span> langchain_core.prompts <span class="k">import</span> ChatPromptTemplate
+<span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
+
+prompt = ChatPromptTemplate.<span class="f">from_messages</span>([
+    (<span class="s">"system"</span>, <span class="s">"You are a helpful assistant. Answer all questions to the best of your ability."</span>),
+    (<span class="s">"placeholder"</span>, <span class="s">"{messages}"</span>),      <span class="c"># ← 整段历史插在这里</span>
+])
+
+chain = prompt | <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>)
+
+response = chain.<span class="f">invoke</span>({
+    <span class="s">"messages"</span>: [
+        (<span class="s">"human"</span>, <span class="s">"Translate this sentence from English to French: I love programming."</span>),
+        (<span class="s">"ai"</span>, <span class="s">"J'adore programmer."</span>),
+        (<span class="s">"human"</span>, <span class="s">"What did you just say?"</span>),   <span class="c"># ← 靠前两条才能回答</span>
+    ],
+})
+<span class="f">print</span>(response.content)</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { ChatPromptTemplate } <span class="k">from</span> <span class="s">'@langchain/core/prompts'</span>;
+<span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+
+<span class="k">const</span> prompt = ChatPromptTemplate.<span class="f">fromMessages</span>([
+  [<span class="s">'system'</span>, <span class="s">'You are a helpful assistant. Answer all questions to the best of your ability.'</span>],
+  [<span class="s">'placeholder'</span>, <span class="s">'{messages}'</span>],
+]);
+
+<span class="k">const</span> chain = prompt.<span class="f">pipe</span>(<span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span> }));
+
+<span class="k">const</span> response = <span class="k">await</span> chain.<span class="f">invoke</span>({
+  messages: [
+    [<span class="s">'human'</span>, <span class="s">'Translate this sentence from English to French: I love programming.'</span>],
+    [<span class="s">'ai'</span>, <span class="s">"J'adore programmer."</span>],
+    [<span class="s">'human'</span>, <span class="s">'What did you just say?'</span>],
+  ],
+});
+console.<span class="f">log</span>(response.content);</code></pre></div>
+</div>
+
+<p>能跑。但把它放到生产环境，四个问题立刻冒出来：</p>
+
+<div class="grid2">
+  <div class="card"><p class="card__meta">问题 1</p><h4>更新必须是原子的</h4><p>「记录了问题但没记录回答」这种半截状态会让下一轮彻底错乱。</p></div>
+  <div class="card"><p class="card__meta">问题 2</p><h4>要存在持久介质里</h4><p>进程一重启，内存里的对话就没了。</p></div>
+  <div class="card"><p class="card__meta">问题 3</p><h4>要能挑选</h4><p>存哪些、发哪些，得能分开控制，否则上下文窗口迟早爆。</p></div>
+  <div class="card"><p class="card__meta">问题 4</p><h4>要能在 LLM 之外检查和修改</h4><p>调试、人工介入、撤销重来，都要求状态是可读可写的。</p></div>
+</div>
+
+<h2 id="langgraph">LangGraph：三个词</h2>
+
+<p>LangGraph 官方的自我介绍是：「用于实现<strong>多参与者、多步骤、有状态</strong>认知架构的库」。这三个词拆开看就很好懂。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 740 300" role="img" aria-label="LangGraph 的三个维度：多参与者需要协调，多步骤需要调度，有状态需要一个共享的中心状态" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="d1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <!-- 多参与者 -->
+    <text x="16" y="20" font-size="11.5" font-weight="600" fill="currentColor">① 多参与者</text>
+    <circle cx="60" cy="70" r="22" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="60" y="74" text-anchor="middle" font-size="9.5" fill="currentColor">LLM</text>
+    <circle cx="140" cy="48" r="22" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="140" y="52" text-anchor="middle" font-size="9.5" fill="currentColor">搜索</text>
+    <circle cx="140" cy="106" r="22" fill="none" stroke="currentColor" stroke-width="1.3"/>
+    <text x="140" y="110" text-anchor="middle" font-size="9.5" fill="currentColor">检索</text>
+    <line x1="82" y1="62" x2="116" y2="52" stroke="currentColor" stroke-width="1.2" marker-end="url(#d1)"/>
+    <line x1="82" y1="80" x2="116" y2="100" stroke="currentColor" stroke-width="1.2" marker-end="url(#d1)"/>
+    <text x="100" y="146" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">谁参与 · 怎么交接</text>
+    <text x="100" y="162" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">= 节点与边</text>
+
+    <line x1="216" y1="20" x2="216" y2="180" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <!-- 多步骤 -->
+    <text x="242" y="20" font-size="11.5" font-weight="600" fill="currentColor">② 多步骤</text>
+    <line x1="250" y1="110" x2="440" y2="110" stroke="currentColor" stroke-width="1" opacity=".3"/>
+    <circle cx="270" cy="110" r="7" fill="currentColor"/>
+    <text x="270" y="92" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">step 1</text>
+    <text x="270" y="132" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">LLM</text>
+    <circle cx="330" cy="110" r="7" fill="currentColor"/>
+    <text x="330" y="92" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">step 2</text>
+    <text x="330" y="132" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">搜索</text>
+    <circle cx="390" cy="110" r="7" fill="currentColor"/>
+    <text x="390" y="92" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">step 3</text>
+    <text x="390" y="132" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">LLM</text>
+    <line x1="434" y1="110" x2="446" y2="110" stroke="currentColor" stroke-width="1.2" marker-end="url(#d1)"/>
+    <text x="345" y="162" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">交接发生在离散的时间步上，</text>
+    <text x="345" y="178" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">所以顺序和次数都是确定的</text>
+
+    <line x1="470" y1="20" x2="470" y2="180" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <!-- 有状态 -->
+    <text x="496" y="20" font-size="11.5" font-weight="600" fill="currentColor">③ 有状态</text>
+    <rect x="530" y="82" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <text x="605" y="104" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">中心状态 State</text>
+    <text x="605" y="122" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">{ messages: [...] }</text>
+    <circle cx="510" cy="60" r="15" fill="none" stroke="currentColor" stroke-width="1.1"/>
+    <text x="510" y="64" text-anchor="middle" font-size="8" fill="currentColor">节点</text>
+    <circle cx="700" cy="60" r="15" fill="none" stroke="currentColor" stroke-width="1.1"/>
+    <text x="700" y="64" text-anchor="middle" font-size="8" fill="currentColor">节点</text>
+    <circle cx="605" cy="168" r="15" fill="none" stroke="currentColor" stroke-width="1.1"/>
+    <text x="605" y="172" text-anchor="middle" font-size="8" fill="currentColor">节点</text>
+    <line x1="522" y1="70" x2="546" y2="80" stroke="currentColor" stroke-width="1.1" marker-end="url(#d1)"/>
+    <line x1="688" y1="70" x2="664" y2="80" stroke="currentColor" stroke-width="1.1" marker-end="url(#d1)"/>
+    <line x1="605" y1="152" x2="605" y2="138" stroke="currentColor" stroke-width="1.1" marker-end="url(#d1)"/>
+    <text x="605" y="204" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">状态被抽出来放在中间 →</text>
+    <text x="605" y="220" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">可快照、可暂停恢复、可人工介入</text>
+
+    <line x1="16" y1="248" x2="724" y2="248" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <text x="370" y="276" text-anchor="middle" font-size="11" fill="currentColor" opacity=".75">这三件事，正好对应上一节列出的四个生产问题</text>
+  </svg>
+  </div>
+  <figcaption>把状态从各个节点里抽出来集中管理，是后面所有高级能力（暂停、回放、人在环路）的前提。</figcaption>
+</figure>
+
+<h2 id="stategraph">搭第一个图</h2>
+
+<p>一个图由三样东西构成：</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>要素</th><th>是什么</th><th>写法</th></tr></thead>
+  <tbody>
+    <tr><td><strong>State</strong></td><td>贯穿全程的数据结构。定义有哪些字段，以及每个字段<strong>怎么合并更新</strong>。</td><td><code>TypedDict</code> + <code>Annotated</code>（JS 用 <code>Annotation.Root</code>）</td></tr>
+    <tr><td><strong>Node</strong></td><td>一步工作。就是个普通函数：收 state，返回「对 state 的更新」。</td><td><code>builder.add_node("name", fn)</code></td></tr>
+    <tr><td><strong>Edge</strong></td><td>节点之间的连线。可以是固定的，也可以是条件的。</td><td><code>add_edge</code> / <code>add_conditional_edges</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p class="note__title">最容易搞混的一点：reducer</p>
+  <p><code>messages: Annotated[list, add_messages]</code> 里的 <code>add_messages</code> 叫 <span class="kbd-term">reducer</span>，它决定「新值怎么和旧值合并」。<strong>没有 reducer 的字段是覆盖，有 <code>add_messages</code> 的字段是追加。</strong>所以节点只需要返回新产生的那一条消息，而不用返回整个列表。</p>
+  <p style="margin-bottom:0"><code>add_messages</code> 还额外做一件事：如果新消息的 <code>id</code> 和已有消息相同，就<strong>替换</strong>而不是追加——第 8 章「编辑状态」靠的就是这个性质。</p>
+</div>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch4/{py,js}/b-state-graph</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py"><pre><code><span class="k">from</span> typing <span class="k">import</span> Annotated, TypedDict
+
+<span class="k">from</span> langchain_core.messages <span class="k">import</span> HumanMessage
+<span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
+<span class="k">from</span> langgraph.graph <span class="k">import</span> END, START, StateGraph, add_messages
+
+
+<span class="c"># ① 状态：messages 用 add_messages 合并（追加而非覆盖）</span>
+<span class="k">class</span> <span class="f">State</span>(TypedDict):
+    messages: Annotated[<span class="f">list</span>, add_messages]
+
+
+model = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>)
+
+
+<span class="c"># ② 节点：收 state，返回「状态更新」</span>
+<span class="k">def</span> <span class="f">chatbot</span>(state: State):
+    answer = model.<span class="f">invoke</span>(state[<span class="s">"messages"</span>])
+    <span class="k">return</span> {<span class="s">"messages"</span>: [answer]}      <span class="c"># 只返回新增的那条</span>
+
+
+builder = <span class="f">StateGraph</span>(State)
+builder.<span class="f">add_node</span>(<span class="s">"chatbot"</span>, chatbot)
+
+<span class="c"># ③ 边：从哪开始、到哪结束</span>
+builder.<span class="f">add_edge</span>(START, <span class="s">"chatbot"</span>)
+builder.<span class="f">add_edge</span>(<span class="s">"chatbot"</span>, END)
+
+graph = builder.<span class="f">compile</span>()      <span class="c"># 编译后就是个 Runnable：invoke / stream / batch 都有</span>
+
+<span class="k">for</span> chunk <span class="k">in</span> graph.<span class="f">stream</span>({<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>(<span class="s">"hi!"</span>)]}):
+    <span class="f">print</span>(chunk)
+<span class="c"># {'chatbot': {'messages': [AIMessage('How can I help you?')]}}</span></code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> {
+  StateGraph, Annotation, messagesStateReducer, START, END,
+} <span class="k">from</span> <span class="s">'@langchain/langgraph'</span>;
+<span class="k">import</span> { HumanMessage } <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
+<span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+
+<span class="c">// ① 状态</span>
+<span class="k">const</span> StateAnnotation = Annotation.<span class="f">Root</span>({
+  messages: <span class="f">Annotation</span>({ reducer: messagesStateReducer, default: () =&gt; [] }),
+});
+
+<span class="k">const</span> model = <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span> });
+
+<span class="c">// ② 节点</span>
+<span class="k">async</span> <span class="k">function</span> <span class="f">chatbot</span>(state) {
+  <span class="k">const</span> answer = <span class="k">await</span> model.<span class="f">invoke</span>(state.messages);
+  <span class="k">return</span> { messages: [answer] };
+}
+
+<span class="c">// ③ 边</span>
+<span class="k">const</span> graph = <span class="k">new</span> <span class="f">StateGraph</span>(StateAnnotation)
+  .<span class="f">addNode</span>(<span class="s">'chatbot'</span>, chatbot)
+  .<span class="f">addEdge</span>(START, <span class="s">'chatbot'</span>)
+  .<span class="f">addEdge</span>(<span class="s">'chatbot'</span>, END)
+  .<span class="f">compile</span>();
+
+<span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> chunk <span class="k">of</span> <span class="k">await</span> graph.<span class="f">stream</span>({ messages: [<span class="k">new</span> <span class="f">HumanMessage</span>(<span class="s">'hi!'</span>)] })) {
+  console.<span class="f">log</span>(chunk);
+}</code></pre></div>
+</div>
+
+<div class="note">
+  <p class="note__title">把图画出来</p>
+  <p><code>graph.get_graph().draw_mermaid_png()</code>（JS：<code>await graph.getGraph().drawMermaidPng()</code>）能直接生成结构图。图一复杂就非常有用——尤其是第 5–7 章的条件边，画出来一眼就能看出有几条路径。</p>
+</div>
+
+<h2 id="checkpointer">让它真的记住：checkpointer 与 thread</h2>
+
+<p>上面的图每次调用都从空白开始。加一个 <span class="kbd-term">checkpointer</span>（存储适配器），它会在<strong>每一步结束后保存一次状态</strong>。下次调用同一个 <code>thread_id</code> 时，图先把上次的状态读回来，和新输入合并，再开始执行。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 720 280" role="img" aria-label="第一次调用后状态被保存；第二次调用同一 thread 时先读回历史再合并新输入，所以模型看到的是三条消息" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="d2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <text x="16" y="20" font-size="11" font-weight="600" fill="currentColor" opacity=".8">thread_id = "1"</text>
+
+    <!-- call 1 -->
+    <rect x="16" y="34" width="132" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+    <text x="82" y="55" text-anchor="middle" font-size="10" fill="currentColor">"hi, 我叫 Jack"</text>
+    <line x1="152" y1="51" x2="188" y2="51" stroke="currentColor" stroke-width="1.2" marker-end="url(#d2)"/>
+    <rect x="194" y="30" width="120" height="42" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="254" y="46" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">chatbot 节点</text>
+    <text x="254" y="62" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">模型看到 1 条消息</text>
+    <line x1="318" y1="51" x2="354" y2="51" stroke="currentColor" stroke-width="1.2" marker-end="url(#d2)"/>
+    <rect x="360" y="34" width="132" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="426" y="55" text-anchor="middle" font-size="10" fill="currentColor">"你好 Jack！"</text>
+
+    <path d="M 426 72 L 426 104 L 600 104" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#d2)"/>
+    <rect x="600" y="76" width="104" height="130" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
+    <text x="652" y="96" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">checkpointer</text>
+    <line x1="612" y1="106" x2="692" y2="106" stroke="currentColor" stroke-width="1" opacity=".3"/>
+    <text x="652" y="124" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">human: hi, 我叫 Jack</text>
+    <text x="652" y="140" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">ai: 你好 Jack！</text>
+    <text x="652" y="160" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">human: 我叫什么？</text>
+    <text x="652" y="184" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".5">内存 / SQLite / Postgres</text>
+
+    <line x1="16" y1="128" x2="560" y2="128" stroke="currentColor" stroke-width="1" opacity=".18"/>
+
+    <!-- call 2 -->
+    <rect x="16" y="150" width="132" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".75"/>
+    <text x="82" y="171" text-anchor="middle" font-size="10" fill="currentColor">"我叫什么？"</text>
+    <line x1="152" y1="167" x2="188" y2="167" stroke="currentColor" stroke-width="1.2" marker-end="url(#d2)"/>
+    <rect x="194" y="146" width="120" height="42" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
+    <text x="254" y="162" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">chatbot 节点</text>
+    <text x="254" y="178" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">模型看到 3 条消息</text>
+    <line x1="318" y1="167" x2="354" y2="167" stroke="currentColor" stroke-width="1.2" marker-end="url(#d2)"/>
+    <rect x="360" y="150" width="132" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="426" y="171" text-anchor="middle" font-size="10" fill="currentColor">"你叫 Jack。"</text>
+
+    <path d="M 596 150 L 560 150 L 560 167 L 320 167" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="4 3" opacity=".7"/>
+    <text x="440" y="200" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".65">执行前先读回历史，和新输入合并</text>
+
+    <text x="360" y="246" text-anchor="middle" font-size="11" fill="currentColor" opacity=".75">换一个 thread_id，就是一段全新的、互不干扰的对话</text>
+    <text x="360" y="266" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".6">这是让同一个应用服务多个用户的关键</text>
+  </svg>
+  </div>
+  <figcaption>「记忆」不是模型的能力，是 checkpointer 每步落盘 + 下次读回来的结果。</figcaption>
+</figure>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch4/{py,js}/c-persistent-memory</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py"><pre><code><span class="k">from</span> langgraph.checkpoint.memory <span class="k">import</span> InMemorySaver
+
+graph = builder.<span class="f">compile</span>(checkpointer=<span class="f">InMemorySaver</span>())
+
+thread1 = {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: <span class="s">"1"</span>}}
+
+graph.<span class="f">invoke</span>({<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>(<span class="s">"hi, my name is Jack!"</span>)]}, thread1)
+graph.<span class="f">invoke</span>({<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>(<span class="s">"what is my name?"</span>)]}, thread1)
+<span class="c"># → "Your name is Jack"</span>
+
+<span class="c"># 状态是可读可写的</span>
+<span class="f">print</span>(graph.<span class="f">get_state</span>(thread1))
+graph.<span class="f">update_state</span>(thread1, {<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>(<span class="s">"I like LLMs!"</span>)]})</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> { MemorySaver } <span class="k">from</span> <span class="s">'@langchain/langgraph'</span>;
+
+<span class="k">const</span> graph = builder.<span class="f">compile</span>({ checkpointer: <span class="k">new</span> <span class="f">MemorySaver</span>() });
+
+<span class="k">const</span> thread1 = { configurable: { thread_id: <span class="s">'1'</span> } };
+
+<span class="k">await</span> graph.<span class="f">invoke</span>({ messages: [<span class="k">new</span> <span class="f">HumanMessage</span>(<span class="s">'hi, my name is Jack!'</span>)] }, thread1);
+<span class="k">await</span> graph.<span class="f">invoke</span>({ messages: [<span class="k">new</span> <span class="f">HumanMessage</span>(<span class="s">'what is my name?'</span>)] }, thread1);
+
+console.<span class="f">log</span>(<span class="k">await</span> graph.<span class="f">getState</span>(thread1));
+<span class="k">await</span> graph.<span class="f">updateState</span>(thread1, { messages: [<span class="k">new</span> <span class="f">HumanMessage</span>(<span class="s">'I like LLMs!'</span>)] });</code></pre></div>
+</div>
+
+<div class="note note--v1">
+  <p class="note__title">1.x 变更</p>
+  <p>Python 的 <code>MemorySaver</code> 已更名为 <code>InMemorySaver</code>（旧名保留为别名，但新代码用新名）。JS 侧仍然叫 <code>MemorySaver</code>。</p>
+</div>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>Checkpointer</th><th>适用场景</th><th>Python 包</th></tr></thead>
+  <tbody>
+    <tr><td><code>InMemorySaver</code></td><td>本地实验、单元测试。进程退出即丢失。</td><td>内置</td></tr>
+    <tr><td><code>SqliteSaver</code></td><td>本地应用、小规模部署。</td><td><code>langgraph-checkpoint-sqlite</code></td></tr>
+    <tr><td><code>PostgresSaver</code></td><td>生产。LangGraph Platform 默认用这个。</td><td><code>langgraph-checkpoint-postgres</code></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="modify">整理聊天记录：裁剪、过滤、合并</h2>
+
+<p>历史会越长越长，而上下文窗口是有限的、按 token 计费的、而且塞太多还会分散模型注意力。三个工具对应三种整理需求：</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 740 250" role="img" aria-label="三种消息整理方式的对比：trim 按 token 预算截断保留最近的，filter 按类型或名字挑选，merge 把连续同类型消息合并成一条" xmlns="http://www.w3.org/2000/svg">
+    <text x="16" y="20" font-size="11" font-weight="600" fill="currentColor">trim_messages · 按预算裁</text>
+    <rect x="16" y="30" width="200" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="20" y="41" font-size="8.5" fill="currentColor">sys</text>
+    <rect x="16" y="48" width="200" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+    <text x="20" y="59" font-size="8.5" fill="currentColor" opacity=".5">早期消息（被丢弃）</text>
+    <rect x="16" y="66" width="200" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+    <text x="20" y="77" font-size="8.5" fill="currentColor" opacity=".5">早期消息（被丢弃）</text>
+    <rect x="16" y="84" width="200" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="20" y="95" font-size="8.5" fill="currentColor">最近的 human</text>
+    <rect x="16" y="102" width="200" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="20" y="113" font-size="8.5" fill="currentColor">最近的 ai</text>
+    <text x="16" y="136" font-size="9.5" fill="currentColor" opacity=".7">strategy="last" · max_tokens=65</text>
+    <text x="16" y="152" font-size="9.5" fill="currentColor" opacity=".7">include_system=True 保住系统提示</text>
+    <text x="16" y="168" font-size="9.5" fill="currentColor" opacity=".7">start_on="human" 保证不会留下</text>
+    <text x="16" y="184" font-size="9.5" fill="currentColor" opacity=".7">「有回答没问题」的孤儿消息</text>
+
+    <line x1="248" y1="14" x2="248" y2="200" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <text x="272" y="20" font-size="11" font-weight="600" fill="currentColor">filter_messages · 按条件挑</text>
+    <rect x="272" y="30" width="180" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+    <text x="276" y="41" font-size="8.5" fill="currentColor" opacity=".5">sys（不匹配）</text>
+    <rect x="272" y="48" width="180" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="276" y="59" font-size="8.5" fill="currentColor">human · example_user ✓</text>
+    <rect x="272" y="66" width="180" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+    <text x="276" y="77" font-size="8.5" fill="currentColor" opacity=".5">ai（不匹配）</text>
+    <rect x="272" y="84" width="180" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="276" y="95" font-size="8.5" fill="currentColor">human · bob ✓</text>
+    <text x="272" y="126" font-size="9.5" fill="currentColor" opacity=".7">include_types / exclude_names /</text>
+    <text x="272" y="142" font-size="9.5" fill="currentColor" opacity=".7">exclude_ids …</text>
+    <text x="272" y="166" font-size="9.5" fill="currentColor" opacity=".7">典型用途：把 few-shot 示例消息</text>
+    <text x="272" y="182" font-size="9.5" fill="currentColor" opacity=".7">从发给模型的历史里剔掉</text>
+
+    <line x1="484" y1="14" x2="484" y2="200" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <text x="508" y="20" font-size="11" font-weight="600" fill="currentColor">merge_message_runs · 合并连续同类</text>
+    <rect x="508" y="30" width="100" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+    <text x="512" y="41" font-size="8.5" fill="currentColor">sys A</text>
+    <rect x="508" y="48" width="100" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+    <text x="512" y="59" font-size="8.5" fill="currentColor">sys B</text>
+    <text x="618" y="52" font-size="14" fill="currentColor">→</text>
+    <rect x="636" y="39" width="88" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="640" y="50" font-size="8.5" fill="currentColor">sys "A\nB"</text>
+
+    <rect x="508" y="72" width="100" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+    <text x="512" y="83" font-size="8.5" fill="currentColor">ai X</text>
+    <rect x="508" y="90" width="100" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
+    <text x="512" y="101" font-size="8.5" fill="currentColor">ai Y</text>
+    <text x="618" y="94" font-size="14" fill="currentColor">→</text>
+    <rect x="636" y="81" width="88" height="14" rx="3" fill="currentColor" opacity=".25"/>
+    <text x="640" y="92" font-size="8.5" fill="currentColor">ai "X\nY"</text>
+
+    <text x="508" y="130" font-size="9.5" fill="currentColor" opacity=".7">有些模型（如 Anthropic）不接受</text>
+    <text x="508" y="146" font-size="9.5" fill="currentColor" opacity=".7">连续两条相同角色的消息</text>
+    <text x="508" y="170" font-size="9.5" fill="currentColor" opacity=".7">字符串内容用换行拼接；</text>
+    <text x="508" y="186" font-size="9.5" fill="currentColor" opacity=".7">内容块列表则合并成一个列表</text>
+
+    <text x="370" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">三者都是 Runnable，可以直接接进链里：<tspan font-family="monospace">trimmer | model</tspan></text>
+  </svg>
+  </div>
+  <figcaption>三个工具解决三个不同的问题：太长、太杂、格式不兼容。</figcaption>
+</figure>
+
+<div class="codegroup">
+  <div class="codegroup__bar">
+    <button class="langtab" data-lang="py" type="button">Python</button>
+    <button class="langtab" data-lang="js" type="button">JavaScript</button>
+    <span class="spacer"></span>
+    <span class="codegroup__file">ch4/{py,js}/d-trim-messages · e-filter · f-merge</span>
+    <button class="chip" data-copy type="button">复制</button>
+  </div>
+  <div data-lang="py"><pre><code><span class="k">from</span> langchain_core.messages <span class="k">import</span> (
+    AIMessage, HumanMessage, SystemMessage,
+    filter_messages, merge_message_runs, trim_messages,
+)
+<span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
+
+<span class="c"># ① 裁剪：留最近的、不超过 65 token</span>
+trimmer = <span class="f">trim_messages</span>(
+    max_tokens=<span class="n">65</span>,
+    strategy=<span class="s">"last"</span>,                                <span class="c"># "last" 留最近，"first" 留最早</span>
+    token_counter=<span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>),  <span class="c"># 用哪个模型的分词器数 token</span>
+    include_system=<span class="k">True</span>,                            <span class="c"># 系统提示永远保留</span>
+    allow_partial=<span class="k">False</span>,                            <span class="c"># 不切半条消息</span>
+    start_on=<span class="s">"human"</span>,                                <span class="c"># 结果必须从 human 开始</span>
+)
+<span class="f">print</span>(trimmer.<span class="f">invoke</span>(messages))
+
+<span class="c"># ② 过滤：按类型 / 名字 / id</span>
+<span class="f">print</span>(<span class="f">filter_messages</span>(messages, include_types=<span class="s">"human"</span>))
+<span class="f">print</span>(<span class="f">filter_messages</span>(messages, exclude_names=[<span class="s">"example_user"</span>, <span class="s">"example_assistant"</span>]))
+<span class="f">print</span>(<span class="f">filter_messages</span>(messages, include_types=[HumanMessage, AIMessage], exclude_ids=[<span class="s">"3"</span>]))
+
+<span class="c"># ③ 合并连续同类型</span>
+<span class="f">print</span>(<span class="f">merge_message_runs</span>(messages))
+
+<span class="c"># 三者都能直接接进链里（不传 messages 参数时返回一个 Runnable）</span>
+chain = <span class="f">trim_messages</span>(max_tokens=<span class="n">65</span>, strategy=<span class="s">"last"</span>, token_counter=model) | model</code></pre></div>
+  <div data-lang="js"><pre><code><span class="k">import</span> {
+  AIMessage, HumanMessage, SystemMessage,
+  filterMessages, mergeMessageRuns, trimMessages,
+} <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
+<span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+
+<span class="k">const</span> trimmer = <span class="f">trimMessages</span>({
+  maxTokens: <span class="n">65</span>,
+  strategy: <span class="s">'last'</span>,
+  tokenCounter: <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1-mini'</span> }),
+  includeSystem: <span class="k">true</span>,
+  allowPartial: <span class="k">false</span>,
+  startOn: <span class="s">'human'</span>,
+});
+console.<span class="f">log</span>(<span class="k">await</span> trimmer.<span class="f">invoke</span>(messages));
+
+console.<span class="f">log</span>(<span class="f">filterMessages</span>(messages, { includeTypes: [<span class="s">'human'</span>] }));
+console.<span class="f">log</span>(<span class="f">filterMessages</span>(messages, { excludeNames: [<span class="s">'example_user'</span>, <span class="s">'example_assistant'</span>] }));
+console.<span class="f">log</span>(<span class="f">mergeMessageRuns</span>(messages));</code></pre></div>
+</div>
+
+<div class="note note--pit">
+  <p class="note__title"><code>start_on="human"</code> 为什么重要</p>
+  <p>如果裁剪后第一条是 <code>AIMessage</code>，模型会看到一个「凭空出现的回答」，很容易被带偏。更严重的是工具调用场景：一条请求调用工具的 <code>AIMessage</code> 后面必须紧跟对应的 <code>ToolMessage</code>，裁断了会直接被 API 拒绝。</p>
+</div>
+
+<h2 id="summary">小结</h2>
+
+<div class="grid2">
+  <div class="card"><p class="card__meta">记住这个</p><h4>记忆 = 状态 + 存储 + 线程</h4><p>状态定义存什么，checkpointer 决定存到哪，thread_id 决定存给谁。</p></div>
+  <div class="card"><p class="card__meta">记住这个</p><h4>节点返回的是「更新」</h4><p>不是新的完整状态。合并规则由 reducer 决定，这是 LangGraph 最容易误解的一点。</p></div>
+  <div class="card"><p class="card__meta">记住这个</p><h4>存的 ≠ 发的</h4><p>checkpointer 可以存全量历史，发给模型前再用 trim / filter 挑一遍。</p></div>
+  <div class="card"><p class="card__meta">记住这个</p><h4>状态是可检查、可修改的</h4><p><code>get_state</code> / <code>update_state</code> 是第 8 章所有人在环路能力的基础。</p></div>
+</div>
+
+<p>下一章开始，我们不再只搭「一个节点的图」，而是讨论<strong>该怎么组织多个节点</strong>——也就是认知架构。</p>

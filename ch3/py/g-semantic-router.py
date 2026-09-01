@@ -1,4 +1,4 @@
-from langchain.utils.math import cosine_similarity
+from langchain_classic.utils.math import cosine_similarity
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import PromptTemplate
 from langchain_core.runnables import chain
@@ -8,7 +8,7 @@ physics_template = """You are a very smart physics professor. You are great at  
 math_template = """You are a very good mathematician. You are great at answering     math questions. You are so good because you are able to break down hard     problems into their component parts, answer the component parts, and then     put them together to answer the broader question. Here is a question: {query}"""
 
 # Embed prompts
-embeddings = OpenAIEmbeddings()
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 prompt_templates = [physics_template, math_template]
 prompt_embeddings = embeddings.embed_documents(prompt_templates)
 
@@ -24,7 +24,7 @@ def prompt_router(query):
     return PromptTemplate.from_template(most_similar)
 
 
-semantic_router = (prompt_router | ChatOpenAI() | StrOutputParser())
+semantic_router = (prompt_router | ChatOpenAI(model="gpt-4.1-mini") | StrOutputParser())
 
 result = semantic_router.invoke("What's a black hole")
 print("\nSemantic router result: ", result)

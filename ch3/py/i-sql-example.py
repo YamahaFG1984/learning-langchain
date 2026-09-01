@@ -12,13 +12,13 @@ Afterwards, place `Chinook.db` in the same directory where this code is running.
 
 from langchain_community.tools import QuerySQLDatabaseTool
 from langchain_community.utilities import SQLDatabase
-from langchain.chains import create_sql_query_chain
+from langchain_classic.chains import create_sql_query_chain
 # replace this with the connection details of your db
 from langchain_openai import ChatOpenAI
 
 db = SQLDatabase.from_uri("sqlite:///Chinook.db")
 print(db.get_usable_table_names())
-llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
 
 # convert question to sql query
 write_query = create_sql_query_chain(llm, db)

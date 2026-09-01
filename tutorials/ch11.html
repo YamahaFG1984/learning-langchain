@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>用 LLM 做产品｜Learning LangChain 中文教程</title>
+<meta name="description" content="聊天助手、协同编辑、环境计算——三种 LLM 原生交互范式。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<link rel="stylesheet" href="assets/course.css">
+</head>
+<body>
+<div class="shell">
+<aside class="rail">
+  <a class="brand" href="index.html">
+    <span class="brand__mark">Learning LangChain</span>
+    <span class="brand__name">中文精读教程</span>
+    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
+  </a>
+  <div>
+    <h3>章节</h3>
+    <nav class="chapnav">
+    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
+    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
+    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
+    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
+    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
+    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
+    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
+    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
+    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
+    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
+    <a href="ch11.html" aria-current="page"><span class="num">11</span><span>用 LLM 做产品</span></a>
+    </nav>
+  </div>
+  <div>
+    <h3>本章目录</h3>
+    <nav class="toc">
+      <a href="#premise">被动摇的前提</a>
+      <a href="#three">三种范式</a>
+      <a href="#chatbot">范式一：聊天助手</a>
+      <a href="#collab">范式二：协同编辑</a>
+      <a href="#ambient">范式三：环境计算</a>
+      <a href="#summary">全书收尾</a>
+    </nav>
+  </div>
+</aside>
+<main class="main">
+<div class="wrap">
+  <div class="topbar">
+    <span class="crumb">第 11 章</span>
+    <div class="tools">
+      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
+      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
+      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
+    </div>
+  </div>
+<header class="chead">
+  <p class="eyebrow">第 11 章</p>
+  <h1>用 LLM 做产品</h1>
+  <p class="lede">技术都讲完了，剩下最难的问题：这东西该长什么样？过去几十年的软件交互范式建立在「计算机绝对可靠」这个前提上，而 LLM 恰好把这个前提拿掉了。</p>
+</header>
+
+<div class="note">
+  <p class="note__title">读完这一章你会</p>
+  <ul style="margin-bottom:0">
+    <li>理解为什么传统的「工具面板 + 画布」范式不完全适用于 LLM 应用</li>
+    <li>说清楚聊天助手、协同编辑、环境计算三种范式的差别</li>
+    <li>知道每种范式需要前面哪几章的能力做支撑</li>
+  </ul>
+</div>
+
+<h2 id="premise">被动摇的前提</h2>
+
+<p>看看 Figma 或 Word 的界面，它们都是同一个结构：</p>
+
+<ul>
+  <li>一个<strong>工具面板</strong>：线条、形状、表格、标题、拼写检查……</li>
+  <li>一块<strong>画布</strong>：你把这些积木摆上去，组成作品。</li>
+</ul>
+
+<p>这个结构隐含一个假设：<strong>软件能做什么，在界面设计的时候就已经确定了。</strong>对 Figma 成立——所有工具都是工程师提前写好的。</p>
+
+<p>但对重度使用 LLM 的软件不成立。而且 LLM 还带来了一个反向的性质：它对「输入不精确」非常宽容（打错字、说半句、表述含糊都行），代价是<strong>输出有时也「不太精确」</strong>。而过去几十年的 HCI 设计，全是围绕「输入精确、输出必然精确」建立的。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 700 220" role="img" aria-label="传统软件输入输出都要求精确；LLM 应用容忍模糊输入但输出也可能模糊，因此交互设计需要新的范式" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="k1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <text x="16" y="22" font-size="11" font-weight="600" fill="currentColor">传统软件</text>
+    <rect x="16" y="34" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="76" y="55" text-anchor="middle" font-size="10" fill="currentColor">精确输入</text>
+    <line x1="140" y1="51" x2="176" y2="51" stroke="currentColor" stroke-width="1.3" marker-end="url(#k1)"/>
+    <rect x="182" y="34" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="242" y="55" text-anchor="middle" font-size="10" fill="currentColor">确定的规则</text>
+    <line x1="306" y1="51" x2="342" y2="51" stroke="currentColor" stroke-width="1.3" marker-end="url(#k1)"/>
+    <rect x="348" y="34" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="408" y="55" text-anchor="middle" font-size="10" fill="currentColor">精确输出</text>
+    <text x="486" y="55" font-size="9.5" fill="currentColor" opacity=".65">→ 界面可以假设「点了就一定对」</text>
+
+    <line x1="16" y1="92" x2="684" y2="92" stroke="currentColor" stroke-width="1" opacity=".2"/>
+
+    <text x="16" y="118" font-size="11" font-weight="600" fill="currentColor">LLM 应用</text>
+    <rect x="16" y="130" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="76" y="151" text-anchor="middle" font-size="10" fill="currentColor">模糊输入也行</text>
+    <line x1="140" y1="147" x2="176" y2="147" stroke="currentColor" stroke-width="1.3" marker-end="url(#k1)"/>
+    <rect x="182" y="130" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="242" y="151" text-anchor="middle" font-size="10" fill="currentColor">概率性生成</text>
+    <line x1="306" y1="147" x2="342" y2="147" stroke="currentColor" stroke-width="1.3" marker-end="url(#k1)"/>
+    <rect x="348" y="130" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="408" y="151" text-anchor="middle" font-size="10" fill="currentColor">输出也可能偏</text>
+    <text x="486" y="147" font-size="9.5" fill="currentColor" opacity=".65">→ 界面必须内建「确认 / 撤销」</text>
+
+    <text x="350" y="200" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">第 8 章的人在环路，本质上就是在为这个新前提补设计</text>
+  </svg>
+  </div>
+  <figcaption>范式之所以要变，是因为底层的可靠性假设变了。</figcaption>
+</figure>
+
+<h2 id="three">三种范式</h2>
+
+<p>书里给了三个可能的答案。它们最大的区别在于<strong>人和 LLM 是否同时在工作</strong>。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 740 280" role="img" aria-label="三种范式的并发关系：聊天助手轮流工作，协同编辑同时工作在同一份文档上，环境计算 LLM 在后台持续工作而人在做别的事" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="k2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <!-- chat -->
+    <text x="16" y="20" font-size="11" font-weight="600" fill="currentColor">① 聊天助手 · 轮流</text>
+    <text x="16" y="44" font-size="9" fill="currentColor" opacity=".6">人</text>
+    <rect x="40" y="34" width="52" height="14" rx="3" fill="currentColor" opacity=".3"/>
+    <rect x="150" y="34" width="52" height="14" rx="3" fill="currentColor" opacity=".3"/>
+    <text x="16" y="64" font-size="9" fill="currentColor" opacity=".6">AI</text>
+    <rect x="96" y="54" width="50" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <rect x="206" y="54" width="50" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="272" y="52" font-size="9" fill="currentColor" opacity=".7">一问一答，永远只有一方在动</text>
+
+    <!-- collab -->
+    <text x="16" y="112" font-size="11" font-weight="600" fill="currentColor">② 协同编辑 · 同时</text>
+    <text x="16" y="136" font-size="9" fill="currentColor" opacity=".6">人</text>
+    <rect x="40" y="126" width="150" height="14" rx="3" fill="currentColor" opacity=".3"/>
+    <rect x="214" y="126" width="120" height="14" rx="3" fill="currentColor" opacity=".3"/>
+    <text x="16" y="156" font-size="9" fill="currentColor" opacity=".6">AI</text>
+    <rect x="96" y="146" width="180" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <line x1="186" y1="122" x2="186" y2="164" stroke="currentColor" stroke-width="1" stroke-dasharray="3 2" opacity=".6"/>
+    <text x="352" y="140" font-size="9" fill="currentColor" opacity=".7">同一份文档上重叠工作</text>
+    <text x="352" y="156" font-size="9" fill="currentColor" opacity=".7">→ 必须解决冲突合并</text>
+
+    <!-- ambient -->
+    <text x="16" y="204" font-size="11" font-weight="600" fill="currentColor">③ 环境计算 · 各干各的</text>
+    <text x="16" y="228" font-size="9" fill="currentColor" opacity=".6">人</text>
+    <rect x="40" y="218" width="80" height="14" rx="3" fill="currentColor" opacity=".18"/>
+    <text x="128" y="229" font-size="8" fill="currentColor" opacity=".5">（在做别的事）</text>
+    <text x="16" y="248" font-size="9" fill="currentColor" opacity=".6">AI</text>
+    <rect x="40" y="238" width="330" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
+    <text x="380" y="249" font-size="8.5" fill="currentColor" opacity=".7">持续在后台跑</text>
+    <line x1="300" y1="234" x2="300" y2="220" stroke="currentColor" stroke-width="1.3" marker-end="url(#k2)"/>
+    <text x="308" y="212" font-size="8.5" font-weight="600" fill="currentColor">发现「有意思的事」才打断你</text>
+
+    <line x1="470" y1="14" x2="470" y2="266" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <text x="496" y="34" font-size="10.5" font-weight="600" fill="currentColor">越往下</text>
+    <text x="496" y="58" font-size="9.5" fill="currentColor" opacity=".75">· 用户投入的注意力越少</text>
+    <text x="496" y="78" font-size="9.5" fill="currentColor" opacity=".75">· 对可靠性的要求越高</text>
+    <text x="496" y="98" font-size="9.5" fill="currentColor" opacity=".75">· 需要的基础设施越复杂</text>
+    <text x="496" y="128" font-size="9.5" fill="currentColor" opacity=".6">这正是第 8 章那条</text>
+    <text x="496" y="146" font-size="9.5" fill="currentColor" opacity=".6">「自主性 vs 可靠性」曲线</text>
+    <text x="496" y="164" font-size="9.5" fill="currentColor" opacity=".6">在产品层面的投影</text>
+  </svg>
+  </div>
+  <figcaption>三种范式不是替代关系，很多产品会同时用到两种以上。</figcaption>
+</figure>
+
+<h2 id="chatbot">范式一：聊天助手</h2>
+
+<p>最容易加到现有产品上的一种：在侧边栏挂一个 AI，主要工作还是在原界面里做。GitHub Copilot Chat 就是典型。</p>
+
+<p>进阶版是<strong>让侧边栏和主界面互相打通</strong>：助手能「看见」你当前打开的文件或选中的文本，也能反过来往编辑器里插入或修改内容。这就从「问答」变成了「协作」的雏形。</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>需要的能力</th><th>为什么</th><th>对应章节</th></tr></thead>
+  <tbody>
+    <tr><td>聊天模型</td><td>对话微调让它天然适合多轮交互</td><td>第 1 章</td></tr>
+    <tr><td>对话历史</td><td>不能「过不了打招呼」——后续提问都会引用前文</td><td>第 4 章</td></tr>
+    <tr><td>流式输出</td><td>逐 token 显示，抵消 LLM 的固有延迟</td><td>第 8 章</td></tr>
+    <tr><td>工具调用</td><td>把「读取选中文本」「在文末插入」暴露成工具，助手才能操作主界面</td><td>第 6 章</td></tr>
+    <tr><td>人在环路</td><td>一旦它能改画布，就必须让用户能先确认、能编辑</td><td>第 8 章</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p class="note__title">书里的一句提醒</p>
+  <p>流式聊天是今天最典型的 LLM 应用形态，几乎所有人第一个做的都是它。但作者猜测：<strong>它也可能变成 LLM 时代的「命令行」</strong>——最接近底层、最强大，但最终会变成小众入口，就像命令行之于今天的计算机。</p>
+</div>
+
+<h2 id="collab">范式二：协同编辑</h2>
+
+<p>把 LLM Agent 当成文档的<strong>另一个协作者</strong>，和人一起在同一份文档上工作。形态可以是「随时给你补全下一句的副驾」，也可以是「你派它去查资料，过一会儿它带着一节草稿回来」。</p>
+
+<p>这是三种范式里工程难度最高的，因为它要求解决真正的并发问题：</p>
+
+<div class="grid2">
+  <div class="card"><p class="card__meta">要素 1</p><h4>共享状态</h4><p>人和 Agent 必须能读同一份文档，并产出同一种格式的编辑操作。</p></div>
+  <div class="card"><p class="card__meta">要素 2</p><h4>任务管理器</h4><p>一次有意义的编辑往往是多步、耗时、可能中途失败的。需要排队、重试、可取消。</p></div>
+  <div class="card"><p class="card__meta">要素 3</p><h4>分支合并</h4><p>你派活之后还在继续改文档。Agent 的产出要么像 Git 一样让你手动合，要么用 CRDT / OT 自动合。</p></div>
+  <div class="card"><p class="card__meta">要素 4</p><h4>并发控制</h4><p>打断、取消、改派、追加——第 8 章 double texting 那几种策略在这里全都用得上。</p></div>
+  <div class="card"><p class="card__meta">要素 5</p><h4>撤销 / 重做栈</h4><p>生产力软件的标配。人会反悔，AI 的编辑也必须能一步步退回去。</p></div>
+  <div class="card"><p class="card__meta">要素 6</p><h4>中间输出</h4><p>一句一句地出，比憋十分钟一次性甩十段更容易合并，也更容易叫停。</p></div>
+</div>
+
+<h2 id="ambient">范式三：环境计算</h2>
+
+<p>「后台一直开着，发现值得你关注的事才出声」——股价提醒、Google 快讯、运维告警都是这个模式。</p>
+
+<p>它一直没能普及，卡在一个地方：<strong>「什么算有意思」这件事很难提前定义清楚。</strong>要么规则太死用不上，要么要花大量时间配置规则，得不偿失。</p>
+
+<p>LLM 的推理能力恰好能补上这一环——它可以在运行时判断「这条信息对这个人现在是否重要」，而不需要你穷举规则。</p>
+
+<figure>
+  <div class="figframe">
+  <svg viewBox="0 0 700 250" role="img" aria-label="环境计算的循环：触发器带来新信息，Agent 结合长期记忆判断是否有趣，有趣就摘要通知用户，并通过反思更新长期记忆里的判断标准" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="k3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+      </marker>
+    </defs>
+    <rect x="16" y="86" width="110" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="71" y="106" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">触发器</text>
+    <text x="71" y="121" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">新邮件 / 定时轮询</text>
+
+    <line x1="130" y1="109" x2="166" y2="109" stroke="currentColor" stroke-width="1.3" marker-end="url(#k3)"/>
+
+    <rect x="172" y="80" width="130" height="58" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
+    <text x="237" y="102" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">判断是否有意思</text>
+    <text x="237" y="118" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">对照长期记忆里的标准</text>
+
+    <rect x="172" y="176" width="130" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3"/>
+    <text x="237" y="196" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">长期记忆</text>
+    <text x="237" y="211" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">看过什么 · 什么算重要</text>
+    <line x1="237" y1="172" x2="237" y2="142" stroke="currentColor" stroke-width="1.2" marker-end="url(#k3)"/>
+
+    <path d="M 306 96 L 350 96" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#k3)"/>
+    <text x="312" y="88" font-size="8.5" fill="currentColor" opacity=".75">有意思</text>
+    <path d="M 306 126 L 350 148" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#k3)"/>
+    <text x="312" y="146" font-size="8.5" fill="currentColor" opacity=".75">不重要 → 静默</text>
+
+    <rect x="356" y="72" width="120" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
+    <text x="416" y="92" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">摘要输出</text>
+    <text x="416" y="107" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">只呈现新增和值得注意的</text>
+
+    <line x1="480" y1="95" x2="516" y2="95" stroke="currentColor" stroke-width="1.3" marker-end="url(#k3)"/>
+    <rect x="522" y="72" width="110" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
+    <text x="577" y="98" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">通知用户</text>
+
+    <path d="M 577 122 L 577 200 L 306 200" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#k3)"/>
+    <text x="440" y="216" text-anchor="middle" font-size="9" fill="currentColor" opacity=".75">反思：从这次的结果里更新「什么算有意思」</text>
+  </svg>
+  </div>
+  <figcaption>关键在那条回边——没有反思和长期记忆，它就退化成了一个死板的规则引擎。</figcaption>
+</figure>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>需要的能力</th><th>为什么</th><th>对应章节</th></tr></thead>
+  <tbody>
+    <tr><td>触发器</td><td>要有持续或周期性的新信息源，否则「环境计算」无从谈起</td><td>第 9 章 Cron / Webhook</td></tr>
+    <tr><td>长期记忆</td><td>「新」是相对于「已知」而言的；没有记忆就无法判断新旧</td><td>第 4 章的持久化</td></tr>
+    <tr><td>反思</td><td>「什么算有意思」要从每次结果里学，写回长期记忆</td><td>第 7 章</td></tr>
+    <tr><td>摘要输出</td><td>后台跑一天产出的量远超人愿意看的量</td><td>第 5 章的链</td></tr>
+    <tr><td>任务管理器</td><td>长期运行必然要处理排队、失败、重试</td><td>第 9 章 Platform</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="summary">全书收尾</h2>
+
+<p>作者最后一段话值得原样带走：</p>
+
+<blockquote style="border-left:3px solid var(--accent);margin:1.5rem 0;padding:.2rem 0 .2rem 1.1rem;color:var(--ink-soft)">
+  <p style="margin-bottom:0">这里没有捷径。你真的得先做一个粗糙的东西出来，去跟用户聊，然后不断重复，直到某个新的、意料之外的东西从另一头冒出来。</p>
+</blockquote>
+
+<p>回过头看这 11 章，它们其实是一条从「模型只会说话」到「用户可以放心用的产品」的路：</p>
+
+<div class="tablewrap">
+<table>
+  <thead><tr><th>章节</th><th>解决的问题</th><th>留下的能力</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td>怎么调模型、怎么拼零件</td><td>提示模板 · 结构化输出 · Runnable</td></tr>
+    <tr><td>2–3</td><td>模型不知道我的数据</td><td>索引 · 检索 · 查询变换 · 路由</td></tr>
+    <tr><td>4</td><td>模型不记得我说过什么</td><td>StateGraph · 检查点 · 线程</td></tr>
+    <tr><td>5–7</td><td>怎么组织多步骤、让它自己干活</td><td>链 · 路由器 · Agent · 反思 · 多智能体</td></tr>
+    <tr><td>8</td><td>能力上去了但不可控</td><td>流式 · 人在环路 · 并发策略</td></tr>
+    <tr><td>9–10</td><td>怎么上线、怎么知道它好不好</td><td>Platform · 数据集 · 评估器 · 追踪</td></tr>
+    <tr><td>11</td><td>做成什么形态</td><td>三种交互范式</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note">
+  <p class="note__title">接下来做什么</p>
+  <p>回到 <code>ch1/</code> 到 <code>ch10/</code> 挑一个最接近你想法的例子，改成你自己的数据和工具，跑起来。<strong>先做一个能跑的糙东西，再用第 10 章的方法量化它到底好不好</strong>——这个顺序比反过来有效得多。</p>
+</div>
+
+<nav class="pager">
+  <a href="ch10.html"><span class="dir">上一章</span><span class="ttl">10 · 测试：评估、监控与改进</span></a>
+  <a class="next" href="index.html"><span class="dir">读完了</span><span class="ttl">回到课程首页</span></a>
+</nav>
+</div>
+</main>
+</div>
+<script src="assets/course.js"></script>
+</body>
+</html>

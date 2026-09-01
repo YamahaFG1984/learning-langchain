@@ -17,7 +17,7 @@ const State = {
 
 let builder = new StateGraph(State);
 
-const model = new ChatOpenAI();
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 
 async function chatbot(state) {
   const answer = await model.invoke(state.messages);

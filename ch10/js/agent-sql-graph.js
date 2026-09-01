@@ -1,7 +1,7 @@
 import { ChatOpenAI } from '@langchain/openai';
-import { SqlDatabase } from 'langchain/sql_db';
+import { SqlDatabase } from '@langchain/classic/sql_db';
 import { DataSource } from 'typeorm';
-import { SqlToolkit } from 'langchain/agents/toolkits/sql';
+import { SqlToolkit } from '@langchain/classic/agents/toolkits/sql';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { z } from 'zod';
 import { tool } from '@langchain/core/tools';
@@ -16,7 +16,7 @@ import {
 import Database from 'better-sqlite3';
 
 // LLM
-const llm = new ChatOpenAI({ model: 'gpt-4o', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0 });
 
 // SQL toolkit
 const datasource = new DataSource({

@@ -1,4 +1,4 @@
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import WebBaseLoader
 from langchain_community.vectorstores import InMemoryVectorStore
 from langchain_openai import OpenAIEmbeddings
@@ -26,7 +26,7 @@ doc_splits = text_splitter.split_documents(docs_list)
 # Add to vectorDB
 vectorstore = InMemoryVectorStore.from_documents(
     documents=doc_splits,
-    embedding=OpenAIEmbeddings(),
+    embedding=OpenAIEmbeddings(model="text-embedding-3-small"),
 )
 retriever = vectorstore.as_retriever()
 
@@ -49,7 +49,7 @@ class GradeDocuments(BaseModel):
 
 
 # LLM with structured output
-llm = ChatOpenAI(temperature=0)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
 structured_llm_grader = llm.with_structured_output(GradeDocuments)
 
 # Prompt

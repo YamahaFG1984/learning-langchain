@@ -1,22 +1,29 @@
-from langgraph.graph import StateGraph
-from langgraph.checkpoint.memory import MemorySaver
+"""Resume an interrupted graph by invoking it again with `None` as the input."""
+
+import asyncio
+
+from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.memory import InMemorySaver
+
+from agent import QUESTION, build_graph
 
 
 async def main():
-    # Create a simple graph
-    builder = StateGraph()
-    # Add nodes and edges as needed
-    graph = builder.compile(checkpointer=MemorySaver())
-
+    graph = build_graph(checkpointer=InMemorySaver())
     config = {"configurable": {"thread_id": "1"}}
 
-    output = graph.astream(None, config, interrupt_before=["tools"])
+    # 1. Run until we are about to call a tool.
+    async for c in graph.astream(
+        {"messages": [HumanMessage(QUESTION)]}, config, interrupt_before=["tools"]
+    ):
+        print(c)
 
-    async for c in output:
-        print(c)  # do something with the output
+    print("\n--- approved, resuming ---\n")
+
+    # 2. `None` input means "continue where you left off" for this thread.
+    async for c in graph.astream(None, config):
+        print(c)
 
 
 if __name__ == "__main__":
-    import asyncio
-
     asyncio.run(main())

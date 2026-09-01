@@ -1,5 +1,5 @@
 from typing import Literal
-from langchain.hub import pull
+from langchain_classic.hub import pull
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.messages import HumanMessage
 from langchain_openai import ChatOpenAI
@@ -15,8 +15,10 @@ from retrieval_graph.state import AgentState
 
 
 class Schema(BaseModel):
-    route: str = Literal['retrieve', 'direct']
-    direct_answer: str
+    """Routing decision produced by the LLM."""
+
+    route: Literal["retrieve", "direct"]
+    direct_answer: str = ""
 
 
 async def check_query_type(state: AgentState, *, config: RunnableConfig):
@@ -29,7 +31,7 @@ async def check_query_type(state: AgentState, *, config: RunnableConfig):
     ])
 
     formatted_prompt = routing_prompt.invoke({"query": state["query"]})
-    response = structured_llm.invoke(formatted_prompt)
+    response = await structured_llm.ainvoke(formatted_prompt)
 
     route = response.route
 
@@ -52,9 +54,10 @@ async def route_query(state: AgentState, *, config: RunnableConfig):
 
 
 async def retrieve_documents(state: AgentState, *, config: RunnableConfig):
-    configuration = Configuration.from_runnable_config(config)
-    retriever = make_retriever(configuration)
-    response = retriever.invoke(state["query"])
+    # `make_retriever` is a context manager: it opens (and closes) the connection
+    # to the vector store for us.
+    with make_retriever(config) as retriever:
+        response = await retriever.ainvoke(state["query"])
     return {"documents": response}
 
 
@@ -65,16 +68,18 @@ async def generate_response(state: AgentState, *, config: RunnableConfig):
     formatted_prompt = prompt_template.invoke(
         {"context": context, "question": state["query"]})
     messages = formatted_prompt.messages + state["messages"]
-    response = load_chat_model(configuration.query_model).invoke(messages)
+    response = await load_chat_model(configuration.query_model).ainvoke(messages)
     return {"messages": response}
 
 
-builder = StateGraph(AgentState, config_schema=Configuration)
+builder = StateGraph(AgentState, context_schema=Configuration)
 builder.add_node("check_query_type", check_query_type)
 builder.add_node("retrieve_documents", retrieve_documents)
 builder.add_node("generate_response", generate_response)
 builder.add_edge(START, "check_query_type")
-builder.add_conditional_edges("check_query_type", route_query)
+builder.add_conditional_edges(
+    "check_query_type", route_query, ["retrieve_documents", END]
+)
 builder.add_edge("retrieve_documents", "generate_response")
 builder.add_edge("generate_response", END)
 

@@ -13,7 +13,7 @@ docker run \
 */
 
 import { PostgresRecordManager } from '@langchain/community/indexes/postgres';
-import { index } from 'langchain/indexes';
+import { index } from '@langchain/classic/indexes';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +37,7 @@ const config = {
 };
 
 const vectorStore = await PGVectorStore.initialize(
-  new OpenAIEmbeddings(),
+  new OpenAIEmbeddings({ model: 'text-embedding-3-small' }),
   config
 );
 

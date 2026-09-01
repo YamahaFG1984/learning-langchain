@@ -1,100 +1,117 @@
+"""Supervisor multi-agent architecture (Chapter 7).
+
+A supervisor node uses structured output to decide which worker agent runs next,
+or whether the work is FINISHed. Requires langchain>=1.0 and langgraph>=1.0.
+"""
+
 from typing import Literal
 
 from langchain_openai import ChatOpenAI
-from langgraph.graph import StateGraph, MessagesState, START
+from langgraph.graph import END, START, MessagesState, StateGraph
 from pydantic import BaseModel
+
+# The set of workers the supervisor can delegate to.
+# Give them self-explanatory names: the LLM only sees the names.
+agents = ["researcher", "coder"]
 
 
 class SupervisorDecision(BaseModel):
+    """Who should act next, or FINISH when the task is done."""
+
     next: Literal["researcher", "coder", "FINISH"]
 
 
-# Initialize model
-model = ChatOpenAI(model="gpt-4", temperature=0)
-model = model.with_structured_output(SupervisorDecision)
+model = ChatOpenAI(model="gpt-4.1", temperature=0)
+supervisor_model = model.with_structured_output(SupervisorDecision)
 
-# Define available agents
-agents = ["researcher", "coder"]
+system_prompt_part_1 = f"""You are a supervisor tasked with managing a conversation
+between the following workers: {agents}. Given the following user request,
+respond with the worker to act next. Each worker will perform a task and respond
+with their results and status. When finished, respond with FINISH."""
 
-# Define system prompts
-system_prompt_part_1 = f"""You are a supervisor tasked with managing a conversation between the  
-following workers: {agents}. Given the following user request,  
-respond with the worker to act next. Each worker will perform a  
-task and respond with their results and status. When finished,  
-respond with FINISH."""
-
-system_prompt_part_2 = f"""Given the conversation above, who should act next? Or should we FINISH? Select one of: {", ".join(agents)}, FINISH"""
+system_prompt_part_2 = (
+    "Given the conversation above, who should act next? "
+    f"Or should we FINISH? Select one of: {', '.join(agents)}, FINISH"
+)
 
 
-def supervisor(state):
-    messages = [
-        ("system", system_prompt_part_1),
-        *state["messages"],
-        ("system", system_prompt_part_2),
-    ]
-    return model.invoke(messages)
-
-
-# Define agent state
 class AgentState(MessagesState):
-    next: Literal["researcher", "coder", "FINISH"]
+    """Shared state: the message history plus the supervisor's routing decision."""
+
+    next: str
 
 
-# Define agent functions
-def researcher(state: AgentState):
-    # In a real implementation, this would do research tasks
+def supervisor(state: AgentState) -> dict:
+    messages = [
+        {"role": "system", "content": system_prompt_part_1},
+        *state["messages"],
+        {"role": "system", "content": system_prompt_part_2},
+    ]
+    decision = supervisor_model.invoke(messages)
+    # A node must return a state update, so wrap the decision in the `next` key.
+    return {"next": decision.next}
+
+
+def researcher(state: AgentState) -> dict:
     response = model.invoke(
         [
             {
                 "role": "system",
-                "content": "You are a research assistant. Analyze the request and provide relevant information.",
+                "content": "You are a research assistant. Analyze the request and "
+                "provide relevant information. Be concise.",
             },
-            {"role": "user", "content": state["messages"][0].content},
+            *state["messages"],
         ]
     )
     return {"messages": [response]}
 
 
-def coder(state: AgentState):
-    # In a real implementation, this would write code
+def coder(state: AgentState) -> dict:
     response = model.invoke(
         [
             {
                 "role": "system",
-                "content": "You are a coding assistant. Implement the requested functionality.",
+                "content": "You are a coding assistant. Implement the requested "
+                "functionality. Be concise.",
             },
-            {"role": "user", "content": state["messages"][0].content},
+            *state["messages"],
         ]
     )
     return {"messages": [response]}
 
 
-# Build the graph
+def route(state: AgentState) -> Literal["researcher", "coder", "__end__"]:
+    """Map the supervisor's decision onto a node name (or the end of the graph)."""
+    return END if state["next"] == "FINISH" else state["next"]
+
+
 builder = StateGraph(AgentState)
 builder.add_node("supervisor", supervisor)
 builder.add_node("researcher", researcher)
 builder.add_node("coder", coder)
 
 builder.add_edge(START, "supervisor")
-# Route to one of the agents or exit based on the supervisor's decision
-builder.add_conditional_edges("supervisor", lambda state: state["next"])
+# Route to one of the agents, or exit, based on the supervisor's decision.
+builder.add_conditional_edges("supervisor", route, ["researcher", "coder", END])
 builder.add_edge("researcher", "supervisor")
 builder.add_edge("coder", "supervisor")
 
 graph = builder.compile()
 
-# Example usage
-initial_state = {
-    "messages": [
-        {
-            "role": "user",
-            "content": "I need help analyzing some data and creating a visualization.",
-        }
-    ],
-    "next": "supervisor",
-}
+if __name__ == "__main__":
+    initial_state = {
+        "messages": [
+            {
+                "role": "user",
+                "content": "I need help analyzing some data and creating a visualization.",
+            }
+        ]
+    }
 
-for output in graph.stream(initial_state):
-    print(f"\nStep decision: {output.get('next', 'N/A')}")
-    if output.get("messages"):
-        print(f"Response: {output['messages'][-1].content[:100]}...")
+    for step in graph.stream(initial_state):
+        for node, update in step.items():
+            print(f"\n--- {node} ---")
+            if "next" in update:
+                print("next:", update["next"])
+            if update.get("messages"):
+                print(update["messages"][-1].content[:200], "...")

@@ -9,7 +9,7 @@ import {
 import { ChatOpenAI } from '@langchain/openai';
 import { HumanMessage } from '@langchain/core/messages';
 
-const model = new ChatOpenAI();
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 
 const State = {
   // Messages have the type "list". The `add_messages`

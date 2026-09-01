@@ -11,10 +11,10 @@ Afterwards, place `Chinook.db` in the same directory where this code is running.
 */
 
 import { ChatOpenAI } from '@langchain/openai';
-import { createSqlQueryChain } from 'langchain/chains/sql_db';
-import { SqlDatabase } from 'langchain/sql_db';
+import { createSqlQueryChain } from '@langchain/classic/chains/sql_db';
+import { SqlDatabase } from '@langchain/classic/sql_db';
 import { DataSource } from 'typeorm';
-import { QuerySqlTool } from 'langchain/tools/sql';
+import { QuerySqlTool } from '@langchain/classic/tools/sql';
 
 const datasource = new DataSource({
   type: 'sqlite',
@@ -26,7 +26,7 @@ const db = await SqlDatabase.fromDataSourceParams({
 //test that the db is working
 await db.run('SELECT * FROM Artist LIMIT 10;');
 
-const llm = new ChatOpenAI({ modelName: 'gpt-4o', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0 });
 // convert question to sql query
 const writeQuery = await createSqlQueryChain({ llm, db, dialect: 'sqlite' });
 // execute query

@@ -12,7 +12,7 @@ import {
   END,
 } from '@langchain/langgraph';
 
-const model = new ChatOpenAI();
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 
 const annotation = Annotation.Root({
   messages: Annotation({ reducer: messagesStateReducer, default: () => [] }),

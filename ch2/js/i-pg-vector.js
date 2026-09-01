@@ -12,7 +12,7 @@ docker run \
 3. Use the connection string below for the postgres container
 */
 
-import { TextLoader } from 'langchain/document_loaders/fs/text';
+import { TextLoader } from '@langchain/classic/document_loaders/fs/text';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { PGVectorStore } from '@langchain/community/vectorstores/pgvector';
@@ -30,7 +30,7 @@ const splitter = new RecursiveCharacterTextSplitter({
 const docs = await splitter.splitDocuments(raw_docs);
 
 // embed each chunk and insert it into the vector store
-const model = new OpenAIEmbeddings();
+const model = new OpenAIEmbeddings({ model: 'text-embedding-3-small' });
 const db = await PGVectorStore.fromDocuments(docs, model, {
   postgresConnectionOptions: {
     connectionString,

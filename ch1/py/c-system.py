@@ -1,7 +1,7 @@
 from langchain_core.messages import HumanMessage, SystemMessage
 from langchain_openai.chat_models import ChatOpenAI
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 system_msg = SystemMessage(
     "You are a helpful assistant that responds to questions with three exclamation marks."
 )

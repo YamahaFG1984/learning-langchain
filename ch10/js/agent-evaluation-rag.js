@@ -9,7 +9,7 @@ const defaultDataset = 'langchain-blogs-qa';
 
 const experimentPrefix = 'langchain-blogs-qa-evals';
 
-const llm = new ChatOpenAI({ model: 'gpt-4o', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1', temperature: 0 });
 
 const EVALUATION_PROMPT = `You are a teacher grading a quiz.
 

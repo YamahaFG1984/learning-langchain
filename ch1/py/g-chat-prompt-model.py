@@ -14,7 +14,7 @@ template = ChatPromptTemplate.from_messages(
     ]
 )
 
-model = ChatOpenAI()
+model = ChatOpenAI(model="gpt-4.1-mini")
 
 # `prompt` and `completion` are the results of using template and model once
 

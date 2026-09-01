@@ -6,9 +6,9 @@ from langgraph.graph import END, START, StateGraph
 from langgraph.graph.message import add_messages
 
 # useful to generate SQL query
-model_low_temp = ChatOpenAI(temperature=0.1)
+model_low_temp = ChatOpenAI(model="gpt-4.1-mini", temperature=0.1)
 # useful to generate natural language outputs
-model_high_temp = ChatOpenAI(temperature=0.7)
+model_high_temp = ChatOpenAI(model="gpt-4.1-mini", temperature=0.7)
 
 
 class State(TypedDict):
@@ -65,7 +65,7 @@ def explain_sql(state: State) -> State:
     }
 
 
-builder = StateGraph(State, input=Input, output=Output)
+builder = StateGraph(State, input_schema=Input, output_schema=Output)
 builder.add_node("generate_sql", generate_sql)
 builder.add_node("explain_sql", explain_sql)
 builder.add_edge(START, "generate_sql")

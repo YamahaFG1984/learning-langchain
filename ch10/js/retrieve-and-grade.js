@@ -1,6 +1,6 @@
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { CheerioWebBaseLoader } from '@langchain/community/document_loaders/web/cheerio';
-import { InMemoryVectorStore } from '@langchain/community/vectorstores/in_memory';
+import { MemoryVectorStore } from '@langchain/classic/vectorstores/memory';
 import { OpenAIEmbeddings } from '@langchain/openai';
 import { ChatPromptTemplate } from '@langchain/core/prompts';
 import { z } from 'zod';
@@ -35,9 +35,9 @@ const textSplitter = new RecursiveCharacterTextSplitter({
 const docSplits = textSplitter.splitDocuments(docsList);
 
 // Add to vector database
-const vectorstore = await InMemoryVectorStore.fromDocuments(
+const vectorstore = await MemoryVectorStore.fromDocuments(
   docSplits,
-  new OpenAIEmbeddings()
+  new OpenAIEmbeddings({ model: 'text-embedding-3-small' })
 );
 
 const retriever = vectorstore.asRetriever(); // The `retriever` object can now be used for querying
@@ -56,7 +56,7 @@ const GradeDocumentsSchema = z.object({
 });
 
 // Initialize LLM with structured output using Zod schema
-const llm = new ChatOpenAI({ model: 'gpt-3.5-turbo', temperature: 0 });
+const llm = new ChatOpenAI({ model: 'gpt-4.1-mini', temperature: 0 });
 const structuredLLMGrader = llm.withStructuredOutput(GradeDocumentsSchema);
 
 // System and prompt template

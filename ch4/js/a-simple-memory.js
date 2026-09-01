@@ -8,7 +8,7 @@ const prompt = ChatPromptTemplate.fromMessages([
   ],
   ['placeholder', '{messages}'],
 ]);
-const model = new ChatOpenAI();
+const model = new ChatOpenAI({ model: 'gpt-4.1-mini' });
 const chain = prompt.pipe(model);
 
 const response = await chain.invoke({

@@ -32,7 +32,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 documents = text_splitter.split_documents(raw_documents)
 
 # Create embeddings for the documents
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 
 db = PGVector.from_documents(
     documents, embeddings_model, connection=connection)
@@ -61,7 +61,7 @@ print("Documents added successfully.\n Fetched documents count:",
       len(db.get_by_ids(ids)))
 
 print("Deleting document with id", ids[1])
-db.delete({"ids": ids})
+db.delete(ids=[ids[1]])
 
 print("Document deleted successfully.\n Fetched documents count:",
       len(db.get_by_ids(ids)))

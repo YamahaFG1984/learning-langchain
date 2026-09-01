@@ -22,8 +22,8 @@ def calculator(query: str) -> str:
 search = DuckDuckGoSearchRun()
 tools = [search, calculator]
 
-embeddings = OpenAIEmbeddings()
-model = ChatOpenAI(temperature=0.1)
+embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+model = ChatOpenAI(model="gpt-4.1-mini", temperature=0.1)
 
 tools_retriever = InMemoryVectorStore.from_documents(
     [Document(tool.description, metadata={"name": tool.name}) for tool in tools],

@@ -33,7 +33,7 @@ text_splitter = RecursiveCharacterTextSplitter(
 documents = text_splitter.split_documents(raw_documents)
 
 # Create embeddings for the documents
-embeddings_model = OpenAIEmbeddings()
+embeddings_model = OpenAIEmbeddings(model="text-embedding-3-small")
 
 db = PGVector.from_documents(
     documents, embeddings_model, connection=connection)
@@ -51,7 +51,7 @@ print(docs[0].page_content)
 prompt = ChatPromptTemplate.from_template(
     """Answer the question based only on the following context: {context} Question: {question} """
 )
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
 llm_chain = prompt | llm
 
 # answer the question based on relevant documents

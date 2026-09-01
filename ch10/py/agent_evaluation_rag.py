@@ -11,7 +11,7 @@ client = Client()
 
 DEFAULT_DATASET_NAME = "langchain-blogs-qa"
 
-llm = ChatOpenAI(model="gpt-4o", temperature=0)
+llm = ChatOpenAI(model="gpt-4.1", temperature=0)
 
 EVALUATION_PROMPT = f"""You are a teacher grading a quiz.
 

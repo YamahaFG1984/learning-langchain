@@ -25,7 +25,7 @@ messages = [
 trimmer = trim_messages(
     max_tokens=65,
     strategy="last",
-    token_counter=ChatOpenAI(model="gpt-4o"),
+    token_counter=ChatOpenAI(model="gpt-4.1"),
     include_system=True,
     allow_partial=False,
     start_on="human",

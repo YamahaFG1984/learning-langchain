@@ -10,12 +10,13 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
-from langchain import hub  # Prompt
+from langchain_classic import hub
 
+# Prompt
 prompt = hub.pull("rlm/rag-prompt")
 
 # LLM
-llm = ChatOpenAI(model_name="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(model="gpt-4.1-mini", temperature=0)
 
 rag_chain = prompt | llm | StrOutputParser()
 
@@ -157,11 +158,9 @@ def web_search(state):
     question = state["question"]
     documents = state["documents"]
 
-    # Web search
-    docs = web_search_tool.invoke({"query": question})
-    web_results = "\n".join([d["content"] for d in docs])
-    web_results = Document(page_content=web_results)
-    documents.append(web_results)
+    # Web search. DuckDuckGoSearchRun returns a single string of results.
+    results = web_search_tool.invoke(question)
+    documents.append(Document(page_content=results))
 
     return {"documents": documents, "question": question}
 

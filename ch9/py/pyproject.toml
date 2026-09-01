@@ -1,21 +1,23 @@
 [project]
 name = "rag-langgraph-template"
 version = "0.0.1"
-description = "A RAG agentin LangGraph."
+description = "A RAG agent in LangGraph."
 authors = []
 license = { text = "MIT" }
 readme = "README.md"
-requires-python = ">=3.9,<4.0"
+requires-python = ">=3.10,<4.0"
 dependencies = [
-    "langgraph>=0.2.6",
-    "langchain-openai>=0.1.22",
-    "langchain>=0.2.14",
+    "langchain>=1.0,<2.0",
+    "langchain-core>=1.0,<2.0",
+    "langchain-classic>=1.0,<2.0",
+    "langchain-openai>=1.0,<2.0",
+    "langchain-community>=0.4,<0.5",
+    "langchain-chroma>=1.0",
+    "langgraph>=1.0,<2.0",
+    "langgraph-sdk>=0.4",
+    "supabase>=2.13.0,<3.0.0",
     "python-dotenv>=1.0.1",
     "msgspec>=0.18.6",
-    "langchain-community>=0.3.15",
-    "supabase (>=2.13.0,<3.0.0)",
-    "langchain-chroma>=0.2.0",
-    "langgraph-sdk>=0.1.51"
 ]
 
 [project.optional-dependencies]
@@ -34,34 +36,15 @@ packages = ["retrieval_graph", "ingestion_graph", "shared"]
 "ingestion_graph" = "src/ingestion_graph"
 "shared" = "src/shared"
 
-
 [tool.setuptools.package-data]
 "*" = ["py.typed"]
 
 [tool.ruff]
-lint.select = [
-    "E",    # pycodestyle
-    "F",    # pyflakes
-    "I",    # isort
-    "D",    # pydocstyle
-    "D401", # First line should be in imperative mood
-    "T201",
-    "UP",
-]
-lint.ignore = [
-    "UP006",
-    "UP007",
-    # We actually do want to import from typing_extensions
-    "UP035",
-    # Relax the convention by _not_ requiring documentation for every function parameter.
-    "D417",
-    "E501",
-]
+lint.select = ["E", "F", "I", "D", "D401", "T201", "UP"]
+lint.ignore = ["UP006", "UP007", "UP035", "D417", "E501"]
 [tool.ruff.lint.per-file-ignores]
 "tests/*" = ["D", "UP"]
 [tool.ruff.lint.pydocstyle]
 convention = "google"
 [tool.pytest.ini_options]
-pythonpath = [
-  "src"
-]
+pythonpath = ["src"]

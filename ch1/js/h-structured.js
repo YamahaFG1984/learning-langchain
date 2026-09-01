@@ -11,7 +11,7 @@ const answerSchema = z
   );
 
 const model = new ChatOpenAI({
-  model: 'gpt-3.5-turbo',
+  model: 'gpt-4.1-mini',
   temperature: 0,
 }).withStructuredOutput(answerSchema);
 
