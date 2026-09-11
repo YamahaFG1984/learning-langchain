@@ -1,18 +1,18 @@
-<header class="chead">
-  <p class="eyebrow">第 06 章</p>
-  <h1>Agent 架构</h1>
-  <p class="lede">前面几种架构里，「跑几步」都是你写死的。Agent 的分水岭在于：<strong>循环几次、什么时候停，由模型自己决定。</strong>这是目前最强、也最不可预测的一种架构。</p>
-</header>
+<span class="chapter-eyebrow">第 6 章</span>
+<h1>Agent 架构</h1>
+<p class="lede">前面几种架构里，「跑几步」都是你写死的。Agent 的分水岭在于：<strong>循环几次、什么时候停，由模型自己决定。</strong>这是目前最强、也最不可预测的一种架构。</p>
 
-<div class="note">
-  <p class="note__title">读完这一章你会</p>
-  <ul style="margin-bottom:0">
+<div class="goals">
+  <h4>读完这一章你会</h4>
+  <ul>
     <li>手工推演一遍 ReAct 的「计划—执行」循环，理解它到底在循环什么</li>
     <li>用 <code>ToolNode</code> + <code>tools_condition</code> 三十行写出一个能用的 Agent</li>
     <li>知道什么时候该「强制先调某个工具」，以及它的代价</li>
     <li>工具超过十几个时，用 RAG 先筛一遍工具</li>
   </ul>
 </div>
+
+<div id="chapter-toc"></div>
 
 <h2 id="what">什么叫「Agent」</h2>
 
@@ -24,71 +24,64 @@
   <li>要能拿到<strong>外部环境的信息</strong>，否则没法判断</li>
 </ul>
 
-<p>落到 LLM 上，就是两个提示技巧的组合：<span class="kbd-term">工具调用</span>（告诉模型有哪些函数可用，以及怎么格式化调用请求）+ <span class="kbd-term">思维链</span>（让它一步步推理）。</p>
+<p>落到 LLM 上，就是两个提示技巧的组合：<span class="term">工具调用</span>（告诉模型有哪些函数可用，以及怎么格式化调用请求）+ <span class="term">思维链</span>（让它一步步推理）。</p>
 
 <h2 id="loop">计划—执行循环</h2>
 
 <p>下面这个手工推演最能说明问题。假设我们只给模型一个提示，工具用 CSV 格式表达，然后手动跑三轮：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 720 330" role="img" aria-label="三轮计划-执行循环：模型先请求搜索，我们执行后把结果贴回提示；模型再请求计算，执行后贴回；第三轮模型选择 output 工具结束循环" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="f1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <text x="360" y="18" text-anchor="middle" font-size="11" fill="currentColor" opacity=".75">问题：「美国第 30 任总统去世时多大年纪？」</text>
+<svg class="dgm" viewBox="0 0 720 330" role="img" aria-label="三轮计划-执行循环：模型先请求搜索，我们执行后把结果贴回提示；模型再请求计算，执行后贴回；第三轮模型选择 output 工具结束循环">
+    <text class="lbl" x="360" y="18" text-anchor="middle" font-size="11">问题：「美国第 30 任总统去世时多大年纪？」</text>
 
     <!-- round 1 -->
-    <text x="16" y="48" font-size="10" font-weight="600" fill="currentColor" opacity=".7">第 1 轮</text>
-    <rect x="70" y="34" width="180" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="160" y="55" text-anchor="middle" font-size="10" fill="currentColor">模型：search,30th president</text>
-    <line x1="254" y1="51" x2="292" y2="51" stroke="currentColor" stroke-width="1.2" marker-end="url(#f1)"/>
-    <rect x="298" y="34" width="150" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="373" y="55" text-anchor="middle" font-size="10" fill="currentColor">我们执行 search</text>
-    <line x1="452" y1="51" x2="490" y2="51" stroke="currentColor" stroke-width="1.2" marker-end="url(#f1)"/>
-    <rect x="496" y="34" width="208" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="600" y="55" text-anchor="middle" font-size="9.5" fill="currentColor">"Calvin Coolidge… 1872–1933"</text>
+    <text class="ttl" x="16" y="48" font-size="10">第 1 轮</text>
+    <rect class="bx" x="70" y="34" width="180" height="34" rx="5"/>
+    <text x="160" y="55" text-anchor="middle" font-size="10">模型：search,30th president</text>
+    <line class="ln" x1="254" y1="51" x2="292" y2="51" marker-end="url(#ar)"/>
+    <rect class="bx" x="298" y="34" width="150" height="34" rx="5"/>
+    <text x="373" y="55" text-anchor="middle" font-size="10">我们执行 search</text>
+    <line class="ln" x1="452" y1="51" x2="490" y2="51" marker-end="url(#ar)"/>
+    <rect class="bx" x="496" y="34" width="208" height="34" rx="5"/>
+    <text x="600" y="55" text-anchor="middle" font-size="9.5">"Calvin Coolidge… 1872–1933"</text>
 
-    <path d="M 600 72 L 600 84 L 160 84 L 160 96" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="4 3" marker-end="url(#f1)"/>
-    <text x="380" y="80" text-anchor="middle" font-size="9" fill="currentColor" opacity=".6">把结果追加进提示，再问一次</text>
+    <path class="ln-d" d="M 600 72 L 600 84 L 160 84 L 160 96" marker-end="url(#ar)"/>
+    <text class="sm" x="380" y="80" text-anchor="middle" font-size="9">把结果追加进提示，再问一次</text>
 
     <!-- round 2 -->
-    <text x="16" y="122" font-size="10" font-weight="600" fill="currentColor" opacity=".7">第 2 轮</text>
-    <rect x="70" y="108" width="180" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="160" y="129" text-anchor="middle" font-size="10" fill="currentColor">模型：calculator,1933-1872</text>
-    <line x1="254" y1="125" x2="292" y2="125" stroke="currentColor" stroke-width="1.2" marker-end="url(#f1)"/>
-    <rect x="298" y="108" width="150" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="373" y="129" text-anchor="middle" font-size="10" fill="currentColor">我们执行 calculator</text>
-    <line x1="452" y1="125" x2="490" y2="125" stroke="currentColor" stroke-width="1.2" marker-end="url(#f1)"/>
-    <rect x="496" y="108" width="208" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="600" y="129" text-anchor="middle" font-size="10" fill="currentColor">61</text>
+    <text class="ttl" x="16" y="122" font-size="10">第 2 轮</text>
+    <rect class="bx" x="70" y="108" width="180" height="34" rx="5"/>
+    <text x="160" y="129" text-anchor="middle" font-size="10">模型：calculator,1933-1872</text>
+    <line class="ln" x1="254" y1="125" x2="292" y2="125" marker-end="url(#ar)"/>
+    <rect class="bx" x="298" y="108" width="150" height="34" rx="5"/>
+    <text x="373" y="129" text-anchor="middle" font-size="10">我们执行 calculator</text>
+    <line class="ln" x1="452" y1="125" x2="490" y2="125" marker-end="url(#ar)"/>
+    <rect class="bx" x="496" y="108" width="208" height="34" rx="5"/>
+    <text x="600" y="129" text-anchor="middle" font-size="10">61</text>
 
-    <path d="M 600 146 L 600 158 L 160 158 L 160 170" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="4 3" marker-end="url(#f1)"/>
+    <path class="ln-d" d="M 600 146 L 600 158 L 160 158 L 160 170" marker-end="url(#ar)"/>
 
     <!-- round 3 -->
-    <text x="16" y="196" font-size="10" font-weight="600" fill="currentColor" opacity=".7">第 3 轮</text>
-    <rect x="70" y="182" width="180" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="2"/>
-    <text x="160" y="203" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">模型：output,61</text>
-    <line x1="254" y1="199" x2="292" y2="199" stroke="currentColor" stroke-width="1.2" marker-end="url(#f1)"/>
-    <rect x="298" y="182" width="150" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="373" y="203" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">循环结束</text>
+    <text class="ttl" x="16" y="196" font-size="10">第 3 轮</text>
+    <rect class="bx-a" x="70" y="182" width="180" height="34" rx="5"/>
+    <text class="ttl on-a" x="160" y="203" text-anchor="middle" font-size="10">模型：output,61</text>
+    <line class="ln" x1="254" y1="199" x2="292" y2="199" marker-end="url(#ar)"/>
+    <rect class="bx-g" x="298" y="182" width="150" height="34" rx="5"/>
+    <text class="ttl on-g" x="373" y="203" text-anchor="middle" font-size="10">循环结束</text>
 
-    <line x1="16" y1="240" x2="704" y2="240" stroke="currentColor" stroke-width="1" opacity=".2"/>
-    <text x="360" y="266" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">关键：<tspan font-weight="600">停止条件由模型给出</tspan>——它选了 output 工具，我们才停。</text>
-    <text x="360" y="290" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">这就是 ReAct（Reason + Act）。现代的工具调用模型已经把这套格式内建了，</text>
-    <text x="360" y="308" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">不再需要你手写 CSV 提示——但底层跑的还是这个循环。</text>
+    <line class="sep" x1="16" y1="240" x2="704" y2="240"/>
+    <text class="lbl" x="360" y="266" text-anchor="middle" font-size="11">关键：<tspan font-weight="600">停止条件由模型给出</tspan>——它选了 output 工具，我们才停。</text>
+    <text class="sm" x="360" y="290" text-anchor="middle" font-size="10.5">这就是 ReAct（Reason + Act）。现代的工具调用模型已经把这套格式内建了，</text>
+    <text class="sm" x="360" y="308" text-anchor="middle" font-size="10.5">不再需要你手写 CSV 提示——但底层跑的还是这个循环。</text>
   </svg>
-  </div>
-  <figcaption>循环三要素：模型请求工具 → 我们执行并把结果贴回 → 模型看着新信息决定下一步。</figcaption>
+<figcaption>循环三要素：模型请求工具 → 我们执行并把结果贴回 → 模型看着新信息决定下一步。</figcaption>
 </figure>
 
 <h2 id="build">用 LangGraph 写一个</h2>
 
 <p>LangGraph 提供了两个现成件，把上面的循环压缩成几行：</p>
 
-<div class="tablewrap">
+<div class="tw">
 <table>
   <thead><tr><th>组件</th><th>是</th><th>做什么</th></tr></thead>
   <tbody>
@@ -99,55 +92,42 @@
 </div>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 640 240" role="img" aria-label="基础 Agent 图：START 到 model，model 通过条件边到 tools 或 END，tools 又回到 model 形成循环" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="f2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="48" cy="110" r="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="48" y="114" text-anchor="middle" font-size="9" fill="currentColor">START</text>
-    <line x1="72" y1="110" x2="140" y2="110" stroke="currentColor" stroke-width="1.4" marker-end="url(#f2)"/>
+<svg class="dgm" viewBox="0 0 640 240" role="img" aria-label="基础 Agent 图：START 到 model，model 通过条件边到 tools 或 END，tools 又回到 model 形成循环">
+    <circle class="bx-d" cx="48" cy="110" r="20"/>
+    <text x="48" y="114" text-anchor="middle" font-size="9">START</text>
+    <line class="ln" x1="72" y1="110" x2="140" y2="110" marker-end="url(#ar)"/>
 
-    <rect x="146" y="84" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="211" y="106" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">model</text>
-    <text x="211" y="123" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">bind_tools 后的 LLM</text>
+    <rect class="bx-a" x="146" y="84" width="130" height="52" rx="6"/>
+    <text class="ttl on-a" x="211" y="106" text-anchor="middle" font-size="11.5">model</text>
+    <text class="lbl" x="211" y="123" text-anchor="middle" font-size="9">bind_tools 后的 LLM</text>
 
-    <path d="M 280 96 L 350 66" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#f2)"/>
-    <text x="292" y="72" font-size="9" fill="currentColor" opacity=".75">有工具调用</text>
-    <path d="M 280 124 L 350 154" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#f2)"/>
-    <text x="292" y="152" font-size="9" fill="currentColor" opacity=".75">没有 → 收工</text>
+    <path class="ln-d" d="M 280 96 L 350 66" marker-end="url(#ar)"/>
+    <text class="lbl" x="292" y="72" font-size="9">有工具调用</text>
+    <path class="ln-d" d="M 280 124 L 350 154" marker-end="url(#ar)"/>
+    <text class="lbl" x="292" y="152" font-size="9">没有 → 收工</text>
 
-    <rect x="356" y="36" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="421" y="58" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">tools</text>
-    <text x="421" y="75" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">ToolNode 执行</text>
+    <rect class="bx-a" x="356" y="36" width="130" height="52" rx="6"/>
+    <text class="ttl on-a" x="421" y="58" text-anchor="middle" font-size="11.5">tools</text>
+    <text class="lbl" x="421" y="75" text-anchor="middle" font-size="9">ToolNode 执行</text>
 
-    <circle cx="400" cy="170" r="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="400" y="174" text-anchor="middle" font-size="9" fill="currentColor">END</text>
+    <circle class="bx-d" cx="400" cy="170" r="20"/>
+    <text x="400" y="174" text-anchor="middle" font-size="9">END</text>
 
-    <path d="M 356 62 L 320 62 L 320 20 L 180 20 L 180 80" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#f2)"/>
-    <text x="250" y="14" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">工具结果回灌 → 再问一次</text>
+    <path class="ln-a" d="M 356 62 L 320 62 L 320 20 L 180 20 L 180 80" marker-end="url(#ar-a)"/>
+    <text class="ttl" x="250" y="14" text-anchor="middle" font-size="10">工具结果回灌 → 再问一次</text>
 
-    <text x="530" y="96" font-size="10" fill="currentColor" opacity=".7">这条回边就是「循环」。</text>
-    <text x="530" y="114" font-size="10" fill="currentColor" opacity=".7">而条件边是唯一的出口，</text>
-    <text x="530" y="132" font-size="10" fill="currentColor" opacity=".7">出口条件由模型说了算。</text>
+    <text class="lbl" x="530" y="96" font-size="10">这条回边就是「循环」。</text>
+    <text class="lbl" x="530" y="114" font-size="10">而条件边是唯一的出口，</text>
+    <text class="lbl" x="530" y="132" font-size="10">出口条件由模型说了算。</text>
 
-    <text x="320" y="222" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">LangGraph 里凡是要写循环，就一定要配一条条件边——否则永远停不下来。</text>
+    <text class="sm" x="320" y="222" text-anchor="middle" font-size="10.5">LangGraph 里凡是要写循环，就一定要配一条条件边——否则永远停不下来。</text>
   </svg>
-  </div>
-  <figcaption>整个 Agent 架构就是这张图：一个环，加一个由模型控制的出口。</figcaption>
+<figcaption>整个 Agent 架构就是这张图：一个环，加一个由模型控制的出口。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch6/{py,js}/a-basic-agent</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="c"># pip install ddgs</span>
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch6/{py,js}/a-basic-agent</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="c"># pip install ddgs</span>
 <span class="k">import</span> ast
 <span class="k">from</span> typing <span class="k">import</span> Annotated, TypedDict
 
@@ -192,8 +172,8 @@ builder.<span class="f">add_edge</span>(<span class="s">"tools"</span>, <span cl
 graph = builder.<span class="f">compile</span>()
 
 <span class="k">for</span> c <span class="k">in</span> graph.<span class="f">stream</span>({<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>(<span class="s">"美国第 30 任总统去世时多大年纪？"</span>)]}):
-    <span class="f">print</span>(c)</code></pre></div>
-  <div data-lang="js"><pre><code><span class="c">// npm i duck-duck-scrape expr-eval</span>
+    <span class="f">print</span>(c)</code></pre>
+<pre data-lang="js"><code><span class="c">// npm i duck-duck-scrape expr-eval</span>
 <span class="k">import</span> { DuckDuckGoSearch } <span class="k">from</span> <span class="s">'@langchain/community/tools/duckduckgo_search'</span>;
 <span class="k">import</span> { Calculator } <span class="k">from</span> <span class="s">'@langchain/community/tools/calculator'</span>;
 <span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
@@ -220,19 +200,19 @@ graph = builder.<span class="f">compile</span>()
   .<span class="f">addEdge</span>(START, <span class="s">'model'</span>)
   .<span class="f">addConditionalEdges</span>(<span class="s">'model'</span>, toolsCondition)
   .<span class="f">addEdge</span>(<span class="s">'tools'</span>, <span class="s">'model'</span>)
-  .<span class="f">compile</span>();</code></pre></div>
+  .<span class="f">compile</span>();</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更</div>
   <p>Python 搜索工具的底层依赖从 <code>duckduckgo-search</code> 换成了 <code>ddgs</code>（同一个项目改名）。装 <code>pip install ddgs</code> 即可，<code>DuckDuckGoSearchRun</code> 的用法不变。</p>
-  <p style="margin-bottom:0">另外，LangChain 1.0 新增了更高层的 <code>from langchain.agents import create_agent</code>，一行就能得到上面这张图（还带中间件、结构化输出等）。本书为了讲清原理才手写；生产项目里可以直接用 <code>create_agent</code>。</p>
+  <p>另外，LangChain 1.0 新增了更高层的 <code>from langchain.agents import create_agent</code>，一行就能得到上面这张图（还带中间件、结构化输出等）。本书为了讲清原理才手写；生产项目里可以直接用 <code>create_agent</code>。</p>
 </div>
 
 <h3>输出长什么样</h3>
 
-<div class="shellblock">
-  <div class="codegroup__bar"><span class="codegroup__file">graph.stream(...) 的三次产出</span></div>
+<div class="code">
+  <div class="bar"><span class="tag">graph.stream(...) 的三次产出</span></div>
 <pre><code>{'model': {'messages': AIMessage(content='', tool_calls=[
     {'name': 'duckduckgo_search', 'args': {'query': '30th president of the United States'},
      'id': 'call_ZWRb...', 'type': 'tool_call'}])}}
@@ -254,53 +234,40 @@ graph = builder.<span class="f">compile</span>()
 <p>做法是加一个不调用 LLM 的节点，直接手工构造一条带工具调用的 <code>AIMessage</code>，然后直接进 <code>tools</code>：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 210" role="img" aria-label="强制先调工具的变体：入口改为 first_model 节点，它不调用 LLM，直接构造搜索工具调用并进入 tools，之后回到标准循环" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="f3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="40" cy="110" r="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="40" y="114" text-anchor="middle" font-size="8.5" fill="currentColor">START</text>
-    <line x1="62" y1="110" x2="98" y2="110" stroke="currentColor" stroke-width="1.4" marker-end="url(#f3)"/>
+<svg class="dgm" viewBox="0 0 700 210" role="img" aria-label="强制先调工具的变体：入口改为 first_model 节点，它不调用 LLM，直接构造搜索工具调用并进入 tools，之后回到标准循环">
+    <circle class="bx-d" cx="40" cy="110" r="19"/>
+    <text x="40" y="114" text-anchor="middle" font-size="8.5">START</text>
+    <line class="ln" x1="62" y1="110" x2="98" y2="110" marker-end="url(#ar)"/>
 
-    <rect x="104" y="86" width="126" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
-    <text x="167" y="106" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">first_model</text>
-    <text x="167" y="122" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">不调 LLM，直接造 tool_call</text>
+    <rect class="bx-a" x="104" y="86" width="126" height="48" rx="6"/>
+    <text class="ttl on-a" x="167" y="106" text-anchor="middle" font-size="10.5">first_model</text>
+    <text class="lbl" x="167" y="122" text-anchor="middle" font-size="8.5">不调 LLM，直接造 tool_call</text>
 
-    <line x1="234" y1="110" x2="270" y2="110" stroke="currentColor" stroke-width="1.4" marker-end="url(#f3)"/>
+    <line class="ln" x1="234" y1="110" x2="270" y2="110" marker-end="url(#ar)"/>
 
-    <rect x="276" y="86" width="110" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="331" y="114" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">tools</text>
+    <rect class="bx" x="276" y="86" width="110" height="48" rx="6"/>
+    <text class="ttl" x="331" y="114" text-anchor="middle" font-size="10.5">tools</text>
 
-    <line x1="390" y1="110" x2="426" y2="110" stroke="currentColor" stroke-width="1.4" marker-end="url(#f3)"/>
+    <line class="ln" x1="390" y1="110" x2="426" y2="110" marker-end="url(#ar)"/>
 
-    <rect x="432" y="86" width="110" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="487" y="114" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">model</text>
+    <rect class="bx" x="432" y="86" width="110" height="48" rx="6"/>
+    <text class="ttl" x="487" y="114" text-anchor="middle" font-size="10.5">model</text>
 
-    <path d="M 546 98 L 596 74" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#f3)"/>
-    <circle cx="620" cy="66" r="19" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="620" y="70" text-anchor="middle" font-size="8.5" fill="currentColor">END</text>
-    <path d="M 487 138 L 487 172 L 331 172 L 331 138" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#f3)"/>
-    <text x="409" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">之后就是标准循环</text>
+    <path class="ln-d" d="M 546 98 L 596 74" marker-end="url(#ar)"/>
+    <circle class="bx-d" cx="620" cy="66" r="19"/>
+    <text x="620" y="70" text-anchor="middle" font-size="8.5">END</text>
+    <path class="ln" d="M 487 138 L 487 172 L 331 172 L 331 138" marker-end="url(#ar)"/>
+    <text class="lbl" x="409" y="188" text-anchor="middle" font-size="9">之后就是标准循环</text>
 
-    <text x="167" y="60" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">省掉的就是这一次 LLM 调用</text>
-    <text x="167" y="44" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">（更快、更便宜、更确定）</text>
+    <text class="lbl" x="167" y="60" text-anchor="middle" font-size="9.5">省掉的就是这一次 LLM 调用</text>
+    <text class="lbl" x="167" y="44" text-anchor="middle" font-size="9.5">（更快、更便宜、更确定）</text>
   </svg>
-  </div>
-  <figcaption>唯一的改动是入口：<code>START → first_model → tools</code>，而不是 <code>START → model</code>。</figcaption>
+<figcaption>唯一的改动是入口：<code>START → first_model → tools</code>，而不是 <code>START → model</code>。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch6/{py,js}/b-force-first-tool</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">from</span> uuid <span class="k">import</span> uuid4
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch6/{py,js}/b-force-first-tool</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> uuid <span class="k">import</span> uuid4
 
 <span class="k">from</span> langchain_core.messages <span class="k">import</span> AIMessage, ToolCall
 
@@ -322,8 +289,8 @@ builder.<span class="f">add_edge</span>(<span class="s">"first_model"</span>, <s
 builder.<span class="f">add_conditional_edges</span>(<span class="s">"model"</span>, tools_condition)
 builder.<span class="f">add_edge</span>(<span class="s">"tools"</span>, <span class="s">"model"</span>)
 
-graph = builder.<span class="f">compile</span>()</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { AIMessage } <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
+graph = builder.<span class="f">compile</span>()</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { AIMessage } <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
 
 <span class="k">async</span> <span class="k">function</span> <span class="f">firstModelNode</span>(state) {
   <span class="k">const</span> query = state.messages.<span class="f">at</span>(-<span class="n">1</span>).content;
@@ -343,11 +310,11 @@ graph = builder.<span class="f">compile</span>()</code></pre></div>
   .<span class="f">addEdge</span>(<span class="s">'first_model'</span>, <span class="s">'tools'</span>)
   .<span class="f">addEdge</span>(<span class="s">'tools'</span>, <span class="s">'model'</span>)
   .<span class="f">addConditionalEdges</span>(<span class="s">'model'</span>, toolsCondition)
-  .<span class="f">compile</span>();</code></pre></div>
+  .<span class="f">compile</span>();</code></pre>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">什么时候不该这么做</p>
+<div class="box warn">
+  <div class="t">&#9888; 什么时候不该这么做</div>
   <p>只有当「第一步必然是这个工具」是一条<strong>确定的业务规则</strong>时才值得。如果只是「大多数时候是」，硬加这条规则反而会让那些不需要搜索的问题走一次无用的搜索，效果变差。这是典型的「用确定性换灵活性」。</p>
 </div>
 
@@ -358,60 +325,47 @@ graph = builder.<span class="f">compile</span>()</code></pre></div>
 <p>解法很优雅：<strong>对工具本身做一次 RAG。</strong>把每个工具的描述当文档嵌入进向量库，用户提问时先检索出最相关的几个，只把这几个 <code>bind_tools</code> 给模型。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 250" role="img" aria-label="工具检索变体：在进入循环之前增加 select_tools 节点，用向量检索从工具库中挑出最相关的少数工具，只把这些工具绑定给模型" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="f4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="38" cy="120" r="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="38" y="124" text-anchor="middle" font-size="8" fill="currentColor">START</text>
-    <line x1="58" y1="120" x2="92" y2="120" stroke="currentColor" stroke-width="1.4" marker-end="url(#f4)"/>
+<svg class="dgm" viewBox="0 0 700 250" role="img" aria-label="工具检索变体：在进入循环之前增加 select_tools 节点，用向量检索从工具库中挑出最相关的少数工具，只把这些工具绑定给模型">
+    <circle class="bx-d" cx="38" cy="120" r="18"/>
+    <text x="38" y="124" text-anchor="middle" font-size="8">START</text>
+    <line class="ln" x1="58" y1="120" x2="92" y2="120" marker-end="url(#ar)"/>
 
-    <rect x="98" y="96" width="126" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
-    <text x="161" y="116" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">select_tools</text>
-    <text x="161" y="132" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">向量检索工具描述</text>
+    <rect class="bx-a" x="98" y="96" width="126" height="48" rx="6"/>
+    <text class="ttl on-a" x="161" y="116" text-anchor="middle" font-size="10.5">select_tools</text>
+    <text class="lbl" x="161" y="132" text-anchor="middle" font-size="8.5">向量检索工具描述</text>
 
-    <rect x="98" y="20" width="126" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
-    <text x="161" y="40" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".8">工具向量库</text>
-    <text x="161" y="55" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".6">40 个工具的描述</text>
-    <text x="161" y="68" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".6">metadata: {name}</text>
-    <line x1="161" y1="80" x2="161" y2="92" stroke="currentColor" stroke-width="1.1" opacity=".6" marker-end="url(#f4)"/>
+    <rect class="bx-d" x="98" y="20" width="126" height="56" rx="6"/>
+    <text class="lbl" x="161" y="40" text-anchor="middle" font-size="9.5">工具向量库</text>
+    <text class="sm" x="161" y="55" text-anchor="middle" font-size="8.5">40 个工具的描述</text>
+    <text class="sm" x="161" y="68" text-anchor="middle" font-size="8.5">metadata: {name}</text>
+    <line class="ln" x1="161" y1="80" x2="161" y2="92" marker-end="url(#ar)"/>
 
-    <line x1="228" y1="120" x2="262" y2="120" stroke="currentColor" stroke-width="1.4" marker-end="url(#f4)"/>
-    <text x="245" y="110" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".65">3 个</text>
+    <line class="ln" x1="228" y1="120" x2="262" y2="120" marker-end="url(#ar)"/>
+    <text class="lbl" x="245" y="110" text-anchor="middle" font-size="8.5">3 个</text>
 
-    <rect x="268" y="96" width="126" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="331" y="116" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">model</text>
-    <text x="331" y="132" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">只绑定选中的工具</text>
+    <rect class="bx-a" x="268" y="96" width="126" height="48" rx="6"/>
+    <text class="ttl on-a" x="331" y="116" text-anchor="middle" font-size="10.5">model</text>
+    <text class="lbl" x="331" y="132" text-anchor="middle" font-size="8.5">只绑定选中的工具</text>
 
-    <path d="M 398 108 L 448 84" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#f4)"/>
-    <rect x="454" y="60" width="110" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="509" y="88" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">tools</text>
-    <path d="M 398 132 L 448 156" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#f4)"/>
-    <circle cx="472" cy="164" r="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="472" y="168" text-anchor="middle" font-size="8" fill="currentColor">END</text>
-    <path d="M 454 84 L 424 84 L 424 40 L 300 40 L 300 92" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#f4)"/>
+    <path class="ln-d" d="M 398 108 L 448 84" marker-end="url(#ar)"/>
+    <rect class="bx" x="454" y="60" width="110" height="48" rx="6"/>
+    <text class="ttl" x="509" y="88" text-anchor="middle" font-size="10.5">tools</text>
+    <path class="ln-d" d="M 398 132 L 448 156" marker-end="url(#ar)"/>
+    <circle class="bx-d" cx="472" cy="164" r="18"/>
+    <text x="472" y="168" text-anchor="middle" font-size="8">END</text>
+    <path class="ln" d="M 454 84 L 424 84 L 424 40 L 300 40 L 300 92" marker-end="url(#ar)"/>
 
-    <text x="596" y="94" font-size="9.5" fill="currentColor" opacity=".7">代价：多一次</text>
-    <text x="596" y="110" font-size="9.5" fill="currentColor" opacity=".7">嵌入调用的延迟</text>
+    <text class="lbl" x="596" y="94" font-size="9.5">代价：多一次</text>
+    <text class="lbl" x="596" y="110" font-size="9.5">嵌入调用的延迟</text>
 
-    <text x="350" y="222" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">除了开头多一个 select_tools 节点，其余部分和基础 Agent 一模一样</text>
+    <text class="lbl" x="350" y="222" text-anchor="middle" font-size="10.5">除了开头多一个 select_tools 节点，其余部分和基础 Agent 一模一样</text>
   </svg>
-  </div>
-  <figcaption>「先检索工具，再让模型选」——把第 2、3 章的 RAG 手法用在了工具上。</figcaption>
+<figcaption>「先检索工具，再让模型选」——把第 2、3 章的 RAG 手法用在了工具上。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch6/{py,js}/c-many-tools</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">from</span> langchain_core.documents <span class="k">import</span> Document
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch6/{py,js}/c-many-tools</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_core.documents <span class="k">import</span> Document
 <span class="k">from</span> langchain_core.vectorstores.in_memory <span class="k">import</span> InMemoryVectorStore
 <span class="k">from</span> langchain_openai <span class="k">import</span> OpenAIEmbeddings
 
@@ -448,8 +402,8 @@ builder.<span class="f">add_edge</span>(<span class="s">"select_tools"</span>, <
 builder.<span class="f">add_conditional_edges</span>(<span class="s">"model"</span>, tools_condition)
 builder.<span class="f">add_edge</span>(<span class="s">"tools"</span>, <span class="s">"model"</span>)
 
-graph = builder.<span class="f">compile</span>()</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { Document } <span class="k">from</span> <span class="s">'@langchain/core/documents'</span>;
+graph = builder.<span class="f">compile</span>()</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { Document } <span class="k">from</span> <span class="s">'@langchain/core/documents'</span>;
 <span class="k">import</span> { MemoryVectorStore } <span class="k">from</span> <span class="s">'@langchain/classic/vectorstores/memory'</span>;
 <span class="k">import</span> { OpenAIEmbeddings } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
 
@@ -468,16 +422,16 @@ graph = builder.<span class="f">compile</span>()</code></pre></div>
 <span class="k">async</span> <span class="k">function</span> <span class="f">modelNode</span>(state) {
   <span class="k">const</span> selected = tools.<span class="f">filter</span>((t) =&gt; state.selected_tools.<span class="f">includes</span>(t.name));
   <span class="k">return</span> { messages: <span class="k">await</span> model.<span class="f">bindTools</span>(selected).<span class="f">invoke</span>(state.messages) };
-}</code></pre></div>
+}</code></pre>
 </div>
 
 <h2 id="summary">小结</h2>
 
-<div class="grid2">
-  <div class="card"><p class="card__meta">记住这个</p><h4>Agent = 循环 + 模型控制的出口</h4><p>去掉循环就是路由器，去掉条件边就死循环。两者缺一不可。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>工具的 docstring 是提示词</h4><p>模型全靠它判断该不该调、怎么调。写得含糊，选错工具的锅在你。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>确定的规则就写死</h4><p>「一定先搜索」这种业务确定性，硬编码比让 LLM 每次重新判断更快更稳。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>工具多了就先检索工具</h4><p>超过 10 个开始考虑；代价是一次嵌入调用的延迟。</p></div>
+<div class="cards">
+  <div class="card"><span class="meta">记住这个</span><h4>Agent = 循环 + 模型控制的出口</h4><p>去掉循环就是路由器，去掉条件边就死循环。两者缺一不可。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>工具的 docstring 是提示词</h4><p>模型全靠它判断该不该调、怎么调。写得含糊，选错工具的锅在你。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>确定的规则就写死</h4><p>「一定先搜索」这种业务确定性，硬编码比让 LLM 每次重新判断更快更稳。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>工具多了就先检索工具</h4><p>超过 10 个开始考虑；代价是一次嵌入调用的延迟。</p></div>
 </div>
 
 <p>Agent 的能力上限还没到。下一章给它加两样东西：<strong>自我批评</strong>，和<strong>同伴</strong>。</p>

@@ -1,75 +1,64 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>LangGraph 认知架构｜Learning LangChain 中文教程</title>
-<meta name="description" content="自主性阶梯：单次调用 → 链 → 路由器。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 5 章 · LangGraph 认知架构 — Learning LangChain 中文精读</title>
+<meta name="description" content="自主性阶梯：单次调用、链、路由器——先想清楚再动手">
+<script>try{const t=localStorage.getItem('llc-doc-theme');if(t)document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="stylesheet" href="assets/course.css">
 </head>
-<body>
-<div class="shell">
-<aside class="rail">
-  <a class="brand" href="index.html">
-    <span class="brand__mark">Learning LangChain</span>
-    <span class="brand__name">中文精读教程</span>
-    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
-  </a>
-  <div>
-    <h3>章节</h3>
-    <nav class="chapnav">
-    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
-    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
-    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
-    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
-    <a href="ch05.html" aria-current="page"><span class="num">05</span><span>LangGraph 认知架构</span></a>
-    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
-    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
-    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
-    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
-    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
-    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
-    </nav>
-  </div>
-  <div>
-    <h3>本章目录</h3>
-    <nav class="toc">
-      <a href="#ladder">自主性阶梯</a>
-      <a href="#arch1">架构 1：单次 LLM 调用</a>
-      <a href="#arch2">架构 2：链</a>
-      <a href="#arch3">架构 3：路由器</a>
-      <a href="#summary">小结</a>
-    </nav>
-  </div>
+<body data-chapter="5">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--fg-faint)"/></marker>
+<marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+</defs></svg>
+<div id="app">
+<aside id="sidebar">
+<a class="brand" href="index.html"><span class="mark" aria-hidden="true">&#129436;</span><span>LangChain 中文精读<small>《Learning LangChain》图解教程</small></span></a>
+<div class="langswitch" role="group" aria-label="示例代码语言"><span>代码</span><button type="button" data-lang-btn="py" aria-pressed="true">Python</button><button type="button" data-lang-btn="js" aria-pressed="false">JavaScript</button></div>
+<div class="part">第一部分 · 知识</div>
+<a class="ch" href="ch01.html"><span class="n">1</span><span>LLM 基础与构建块</span></a>
+<a class="ch" href="ch02.html"><span class="n">2</span><span>RAG 上篇：建索引</span></a>
+<a class="ch" href="ch03.html"><span class="n">3</span><span>RAG 下篇：对话</span></a>
+<div class="part">第二部分 · 记忆</div>
+<a class="ch" href="ch04.html"><span class="n">4</span><span>加记忆</span></a>
+<div class="part">第三部分 · 行动</div>
+<a class="ch active" aria-current="page" href="ch05.html"><span class="n">5</span><span>认知架构</span></a>
+<a class="ch" href="ch06.html"><span class="n">6</span><span>Agent 架构</span></a>
+<a class="ch" href="ch07.html"><span class="n">7</span><span>反思与多智能体</span></a>
+<div class="part">第四部分 · 可信</div>
+<a class="ch" href="ch08.html"><span class="n">8</span><span>实用模式</span></a>
+<a class="ch" href="ch09.html"><span class="n">9</span><span>部署</span></a>
+<a class="ch" href="ch10.html"><span class="n">10</span><span>测试与评估</span></a>
+<div class="part">第五部分 · 产品</div>
+<a class="ch" href="ch11.html"><span class="n">11</span><span>用 LLM 做产品</span></a>
 </aside>
-<main class="main">
-<div class="wrap">
-  <div class="topbar">
-    <span class="crumb">第 05 章</span>
-    <div class="tools">
-      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
-      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
-      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
-    </div>
-  </div>
-<header class="chead">
-  <p class="eyebrow">第 05 章</p>
-  <h1>LangGraph 认知架构</h1>
-  <p class="lede">同样的砖头，能砌成游泳池也能砌成房子——区别在图纸。这一章讲的就是 LLM 应用的图纸：把多少决策权交给模型，就决定了你在哪一层架构上。</p>
-</header>
+<main>
+<span class="chapter-eyebrow">第 5 章</span>
+<h1>LangGraph 认知架构</h1>
+<p class="lede">同样的砖头，能砌成游泳池也能砌成房子——区别在图纸。这一章讲的就是 LLM 应用的图纸：把多少决策权交给模型，就决定了你在哪一层架构上。</p>
 
-<div class="note">
-  <p class="note__title">读完这一章你会</p>
-  <ul style="margin-bottom:0">
+<div class="goals">
+  <h4>读完这一章你会</h4>
+  <ul>
     <li>用「自主性阶梯」这把尺子给任何 LLM 应用定位</li>
     <li>说清楚自主性（agency）和可靠性（reliability）为什么互相拉扯</li>
     <li>用 LangGraph 实现链式架构和路由架构，并知道各自适合什么</li>
     <li>用 <code>input_schema</code> / <code>output_schema</code> 把内部状态和对外接口分开</li>
   </ul>
 </div>
+
+<nav class="toc" aria-label="本章目录">
+  <div class="h">本章目录</div>
+  <ol>
+    <li><a href="#ladder">自主性阶梯</a></li>
+    <li><a href="#arch1">架构 1：单次 LLM 调用</a></li>
+    <li><a href="#arch2">架构 2：链</a></li>
+    <li><a href="#arch3">架构 3：路由器</a></li>
+    <li><a href="#summary">小结</a></li>
+  </ol>
+</nav>
 
 <h2 id="ladder">自主性阶梯</h2>
 
@@ -84,51 +73,44 @@
 <p>把这三条按「交给 LLM 的数量」排开，就得到了几种常见架构：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 760 300" role="img" aria-label="自主性阶梯：从纯代码到单次 LLM 调用、链、路由器、Agent，交给 LLM 的决策越来越多，可靠性越来越低" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="e1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <line x1="60" y1="240" x2="720" y2="240" stroke="currentColor" stroke-width="1.2" marker-end="url(#e1)"/>
-    <text x="720" y="264" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">自主性 ↑</text>
-    <line x1="60" y1="240" x2="60" y2="40" stroke="currentColor" stroke-width="1.2" marker-end="url(#e1)"/>
-    <text x="46" y="48" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">可靠性 ↑</text>
+<svg class="dgm" viewBox="0 0 760 300" role="img" aria-label="自主性阶梯：从纯代码到单次 LLM 调用、链、路由器、Agent，交给 LLM 的决策越来越多，可靠性越来越低">
+    <line class="ln" x1="60" y1="240" x2="720" y2="240" marker-end="url(#ar)"/>
+    <text class="sm" x="720" y="264" text-anchor="end" font-size="10.5">自主性 ↑</text>
+    <line class="ln" x1="60" y1="240" x2="60" y2="40" marker-end="url(#ar)"/>
+    <text class="sm" x="46" y="48" text-anchor="end" font-size="10.5">可靠性 ↑</text>
 
-    <rect x="76" y="60" width="106" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".6"/>
-    <text x="129" y="80" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">0 · 代码</text>
-    <text x="129" y="97" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">完全不用 LLM</text>
+    <rect class="bx" x="76" y="60" width="106" height="52" rx="6"/>
+    <text class="ttl" x="129" y="80" text-anchor="middle" font-size="10.5">0 · 代码</text>
+    <text class="lbl" x="129" y="97" text-anchor="middle" font-size="9">完全不用 LLM</text>
 
-    <rect x="206" y="88" width="106" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="259" y="108" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">1 · LLM 调用</text>
-    <text x="259" y="125" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">LLM 决定①</text>
+    <rect class="bx" x="206" y="88" width="106" height="52" rx="6"/>
+    <text class="ttl" x="259" y="108" text-anchor="middle" font-size="10.5">1 · LLM 调用</text>
+    <text class="lbl" x="259" y="125" text-anchor="middle" font-size="9">LLM 决定①</text>
 
-    <rect x="336" y="116" width="106" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="389" y="136" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">2 · 链</text>
-    <text x="389" y="153" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">多次①，顺序固定</text>
+    <rect class="bx" x="336" y="116" width="106" height="52" rx="6"/>
+    <text class="ttl" x="389" y="136" text-anchor="middle" font-size="10.5">2 · 链</text>
+    <text class="lbl" x="389" y="153" text-anchor="middle" font-size="9">多次①，顺序固定</text>
 
-    <rect x="466" y="144" width="106" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="519" y="164" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">3 · 路由器</text>
-    <text x="519" y="181" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">LLM 决定①②</text>
+    <rect class="bx" x="466" y="144" width="106" height="52" rx="6"/>
+    <text class="ttl" x="519" y="164" text-anchor="middle" font-size="10.5">3 · 路由器</text>
+    <text class="lbl" x="519" y="181" text-anchor="middle" font-size="9">LLM 决定①②</text>
 
-    <rect x="596" y="172" width="106" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="5 3"/>
-    <text x="649" y="192" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">4 · Agent</text>
-    <text x="649" y="209" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">第 6 章 · 还决定何时停</text>
+    <rect class="bx-d" x="596" y="172" width="106" height="52" rx="6"/>
+    <text class="ttl" x="649" y="192" text-anchor="middle" font-size="10.5">4 · Agent</text>
+    <text class="lbl" x="649" y="209" text-anchor="middle" font-size="9">第 6 章 · 还决定何时停</text>
 
-    <path d="M 129 118 Q 190 130 206 120" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
-    <path d="M 259 146 Q 320 158 336 148" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
-    <path d="M 389 174 Q 450 186 466 176" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
-    <path d="M 519 202 Q 580 214 596 204" fill="none" stroke="currentColor" stroke-width="1" opacity=".35"/>
+    <path class="sep" d="M 129 118 Q 190 130 206 120"/>
+    <path class="sep" d="M 259 146 Q 320 158 336 148"/>
+    <path class="sep" d="M 389 174 Q 450 186 466 176"/>
+    <path class="sep" d="M 519 202 Q 580 214 596 204"/>
 
-    <text x="380" y="30" text-anchor="middle" font-size="11" fill="currentColor" opacity=".75">① 这一步输出什么 &nbsp;·&nbsp; ② 下一步走哪 &nbsp;·&nbsp; ③ 有哪些步可走</text>
+    <text class="lbl" x="380" y="30" text-anchor="middle" font-size="11">① 这一步输出什么 &nbsp;·&nbsp; ② 下一步走哪 &nbsp;·&nbsp; ③ 有哪些步可走</text>
   </svg>
-  </div>
-  <figcaption>没有「最好的架构」，只有「适合这个需求的架构」。往右走能力更强，但输出更难预测。</figcaption>
+<figcaption><span class="fig-n">图 5-1</span>没有「最好的架构」，只有「适合这个需求的架构」。往右走能力更强，但输出更难预测。</figcaption>
 </figure>
 
-<div class="note">
-  <p class="note__title">一个具体的例子：邮件助手</p>
+<div class="box key">
+  <div class="t">&#9733; 一个具体的例子：邮件助手</div>
   <p>假设你要做一个「替我读邮件」的助手，约束是：<strong>少打扰我</strong>，且<strong>绝不能替我发出我不会发的邮件</strong>。这两条约束直接决定了架构选择——第一条推着你往右（更自主），第二条拉着你往左（更可靠）。第 8 章专门讲怎么同时满足这两边。</p>
 </div>
 
@@ -137,24 +119,17 @@
 <p>就是第 4 章那个 chatbot：<code>START → chatbot → END</code>。别小看它——Notion 的「总结」「翻译」，很多产品里的 AI 功能，本质上就是这个。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 420 110" role="img" aria-label="单次 LLM 调用架构：从 START 到 chatbot 节点再到 END，一条直线" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="e2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="50" cy="55" r="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="50" y="59" text-anchor="middle" font-size="9.5" fill="currentColor">START</text>
-    <line x1="74" y1="55" x2="150" y2="55" stroke="currentColor" stroke-width="1.4" marker-end="url(#e2)"/>
-    <rect x="156" y="34" width="110" height="42" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="211" y="59" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">chatbot</text>
-    <line x1="272" y1="55" x2="348" y2="55" stroke="currentColor" stroke-width="1.4" marker-end="url(#e2)"/>
-    <circle cx="372" cy="55" r="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="372" y="59" text-anchor="middle" font-size="9.5" fill="currentColor">END</text>
+<svg class="dgm" viewBox="0 0 420 110" role="img" aria-label="单次 LLM 调用架构：从 START 到 chatbot 节点再到 END，一条直线" style="max-width:546px">
+    <circle class="bx-d" cx="50" cy="55" r="20"/>
+    <text x="50" y="59" text-anchor="middle" font-size="9.5">START</text>
+    <line class="ln" x1="74" y1="55" x2="150" y2="55" marker-end="url(#ar)"/>
+    <rect class="bx-a" x="156" y="34" width="110" height="42" rx="6"/>
+    <text class="ttl on-a" x="211" y="59" text-anchor="middle" font-size="11">chatbot</text>
+    <line class="ln" x1="272" y1="55" x2="348" y2="55" marker-end="url(#ar)"/>
+    <circle class="bx-d" cx="372" cy="55" r="20"/>
+    <text x="372" y="59" text-anchor="middle" font-size="9.5">END</text>
   </svg>
-  </div>
-  <figcaption>架构 1。代码见第 4 章 <code>b-state-graph</code>，或 <code>ch5/{py,js}/a-chatbot</code>。</figcaption>
+<figcaption><span class="fig-n">图 5-2</span>架构 1。代码见第 4 章 <code>b-state-graph</code>，或 <code>ch5/{py,js}/a-chatbot</code>。</figcaption>
 </figure>
 
 <h2 id="arch2">架构 2：链</h2>
@@ -164,59 +139,46 @@
 <p>书里的例子是一个 text-to-SQL 应用：第一步把自然语言变成 SQL，第二步再让一个模型用大白话解释这条 SQL 在干什么，好让不懂 SQL 的用户确认「这确实是我想问的」。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 720 250" role="img" aria-label="链式架构：generate_sql 和 explain_sql 两个节点顺序执行，共享 messages 状态，input_schema 与 output_schema 决定对外暴露哪些字段" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="e3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <rect x="16" y="60" width="96" height="44" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="64" y="78" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Input</text>
-    <text x="64" y="94" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">user_query</text>
+<svg class="dgm" viewBox="0 0 720 250" role="img" aria-label="链式架构：generate_sql 和 explain_sql 两个节点顺序执行，共享 messages 状态，input_schema 与 output_schema 决定对外暴露哪些字段">
+    <rect class="bx-b" x="16" y="60" width="96" height="44" rx="6"/>
+    <text class="ttl on-b" x="64" y="78" text-anchor="middle" font-size="10">Input</text>
+    <text class="lbl" x="64" y="94" text-anchor="middle" font-size="9">user_query</text>
 
-    <line x1="116" y1="82" x2="154" y2="82" stroke="currentColor" stroke-width="1.4" marker-end="url(#e3)"/>
+    <line class="ln" x1="116" y1="82" x2="154" y2="82" marker-end="url(#ar)"/>
 
-    <rect x="160" y="54" width="140" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="230" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">generate_sql</text>
-    <text x="230" y="93" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">temperature 0.1</text>
+    <rect class="bx-a" x="160" y="54" width="140" height="56" rx="6"/>
+    <text class="ttl on-a" x="230" y="76" text-anchor="middle" font-size="11">generate_sql</text>
+    <text class="lbl" x="230" y="93" text-anchor="middle" font-size="9">temperature 0.1</text>
 
-    <line x1="304" y1="82" x2="342" y2="82" stroke="currentColor" stroke-width="1.4" marker-end="url(#e3)"/>
+    <line class="ln" x1="304" y1="82" x2="342" y2="82" marker-end="url(#ar)"/>
 
-    <rect x="348" y="54" width="140" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="418" y="76" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">explain_sql</text>
-    <text x="418" y="93" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">temperature 0.7</text>
+    <rect class="bx-a" x="348" y="54" width="140" height="56" rx="6"/>
+    <text class="ttl on-a" x="418" y="76" text-anchor="middle" font-size="11">explain_sql</text>
+    <text class="lbl" x="418" y="93" text-anchor="middle" font-size="9">temperature 0.7</text>
 
-    <line x1="492" y1="82" x2="530" y2="82" stroke="currentColor" stroke-width="1.4" marker-end="url(#e3)"/>
+    <line class="ln" x1="492" y1="82" x2="530" y2="82" marker-end="url(#ar)"/>
 
-    <rect x="536" y="54" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="596" y="74" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">Output</text>
-    <text x="596" y="90" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">sql_query</text>
-    <text x="596" y="103" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">sql_explanation</text>
+    <rect class="bx-g" x="536" y="54" width="120" height="56" rx="6"/>
+    <text class="ttl on-g" x="596" y="74" text-anchor="middle" font-size="10">Output</text>
+    <text class="lbl" x="596" y="90" text-anchor="middle" font-size="9">sql_query</text>
+    <text class="lbl" x="596" y="103" text-anchor="middle" font-size="9">sql_explanation</text>
 
-    <rect x="160" y="150" width="328" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"/>
-    <text x="324" y="170" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">共享状态 State</text>
-    <text x="324" y="188" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">messages（累积） · user_query · sql_query · sql_explanation</text>
-    <line x1="230" y1="114" x2="230" y2="146" stroke="currentColor" stroke-width="1" opacity=".45" marker-end="url(#e3)"/>
-    <line x1="418" y1="146" x2="418" y2="114" stroke="currentColor" stroke-width="1" opacity=".45" marker-end="url(#e3)"/>
-    <text x="246" y="134" font-size="8.5" fill="currentColor" opacity=".6">写入 sql_query</text>
-    <text x="434" y="134" font-size="8.5" fill="currentColor" opacity=".6">读到上一步的结果</text>
+    <rect class="bx-d" x="160" y="150" width="328" height="52" rx="6"/>
+    <text class="ttl" x="324" y="170" text-anchor="middle" font-size="10">共享状态 State</text>
+    <text class="lbl" x="324" y="188" text-anchor="middle" font-size="9">messages（累积） · user_query · sql_query · sql_explanation</text>
+    <line class="ln" x1="230" y1="114" x2="230" y2="146" marker-end="url(#ar)"/>
+    <line class="ln" x1="418" y1="146" x2="418" y2="114" marker-end="url(#ar)"/>
+    <text class="sm" x="246" y="134" font-size="8.5">写入 sql_query</text>
+    <text class="sm" x="434" y="134" font-size="8.5">读到上一步的结果</text>
 
-    <text x="360" y="228" text-anchor="middle" font-size="10" fill="currentColor" opacity=".62">两个模型温度不同：生成 SQL 要确定，解释给人听可以活泼一点</text>
+    <text class="sm" x="360" y="228" text-anchor="middle" font-size="10">两个模型温度不同：生成 SQL 要确定，解释给人听可以活泼一点</text>
   </svg>
-  </div>
-  <figcaption>顺序完全由 <code>add_edge</code> 写死；LLM 只决定每一步输出什么，不决定走哪。</figcaption>
+<figcaption><span class="fig-n">图 5-3</span>顺序完全由 <code>add_edge</code> 写死；LLM 只决定每一步输出什么，不决定走哪。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch5/{py,js}/b-sql-generator</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> typing <span class="k">import</span> Annotated, TypedDict
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch5/{py,js}/b-sql-generator</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> typing <span class="k">import</span> Annotated, TypedDict
 
 <span class="k">from</span> langchain_core.messages <span class="k">import</span> HumanMessage, SystemMessage
 <span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
@@ -272,8 +234,8 @@ graph = builder.<span class="f">compile</span>()
 
 <span class="f">print</span>(graph.<span class="f">invoke</span>({<span class="s">"user_query"</span>: <span class="s">"每个产品的总销售额是多少？"</span>}))
 <span class="c"># {'sql_query': 'SELECT product_name, SUM(...) ...', 'sql_explanation': '这条查询会…'}</span>
-<span class="c"># 注意 messages 没有出现在结果里 —— 被 output_schema 挡住了</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { HumanMessage, SystemMessage } <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
+<span class="c"># 注意 messages 没有出现在结果里 —— 被 output_schema 挡住了</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { HumanMessage, SystemMessage } <span class="k">from</span> <span class="s">'@langchain/core/messages'</span>;
 <span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
 <span class="k">import</span> {
   StateGraph, Annotation, messagesStateReducer, START, END,
@@ -306,16 +268,16 @@ graph = builder.<span class="f">compile</span>()
   .<span class="f">addEdge</span>(START, <span class="s">'generate_sql'</span>)
   .<span class="f">addEdge</span>(<span class="s">'generate_sql'</span>, <span class="s">'explain_sql'</span>)
   .<span class="f">addEdge</span>(<span class="s">'explain_sql'</span>, END)
-  .<span class="f">compile</span>();</code></pre></div>
+  .<span class="f">compile</span>();</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更</div>
   <p>书上写的是 <code>StateGraph(State, input=Input, output=Output)</code>。这两个参数在 LangGraph 0.5 已改名为 <code>input_schema=</code> / <code>output_schema=</code>，旧名还能用但会打弃用警告。</p>
 </div>
 
-<div class="note">
-  <p class="note__title">为什么要分 Input / Output schema</p>
+<div class="box key">
+  <div class="t">&#9733; 为什么要分 Input / Output schema</div>
   <p>因为「内部要传的东西」和「对外暴露的东西」通常不一样。上例里 <code>messages</code> 是两个节点之间传递上下文用的中间状态，用户不需要看到。<strong>分开之后，输入校验更严，输出更干净，中间状态还能通过 <code>stream()</code> 观察到。</strong></p>
 </div>
 
@@ -325,67 +287,54 @@ graph = builder.<span class="f">compile</span>()
 
 <p>场景：一个医疗助手，背后有两个知识库——病历库和保险 FAQ 库。往提示里塞无关内容只会拉低效果，所以每个问题应该只查一个库。谁来判断该查哪个？LLM。</p>
 
-<div class="note">
-  <p class="note__title">LLM 之前是怎么做的</p>
+<div class="box key">
+  <div class="t">&#9733; LLM 之前是怎么做的</div>
   <p>训一个分类器：手工标一批「问题 → 应该查哪个库」的数据，提取特征，训练模型。光是攒数据集就够呛。<strong>LLM 因为已经理解语言，几乎不需要样本就能当这个分类器用。</strong>这是 LLM 最被低估的用法之一。</p>
 </div>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 280" role="img" aria-label="路由架构：router 节点用 LLM 判断领域，条件边把执行分流到两个检索节点之一，两条路径最后汇合到 generate_answer" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="e4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="46" cy="140" r="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="46" y="144" text-anchor="middle" font-size="9" fill="currentColor">START</text>
-    <line x1="70" y1="140" x2="120" y2="140" stroke="currentColor" stroke-width="1.4" marker-end="url(#e4)"/>
+<svg class="dgm" viewBox="0 0 700 280" role="img" aria-label="路由架构：router 节点用 LLM 判断领域，条件边把执行分流到两个检索节点之一，两条路径最后汇合到 generate_answer">
+    <circle class="bx-d" cx="46" cy="140" r="20"/>
+    <text x="46" y="144" text-anchor="middle" font-size="9">START</text>
+    <line class="ln" x1="70" y1="140" x2="120" y2="140" marker-end="url(#ar)"/>
 
-    <rect x="126" y="112" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="186" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">router</text>
-    <text x="186" y="151" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">LLM 输出 domain</text>
+    <rect class="bx-a" x="126" y="112" width="120" height="56" rx="6"/>
+    <text class="ttl on-a" x="186" y="134" text-anchor="middle" font-size="11">router</text>
+    <text class="lbl" x="186" y="151" text-anchor="middle" font-size="9">LLM 输出 domain</text>
 
     <!-- conditional edges (dashed) -->
-    <path d="M 250 126 L 300 72" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#e4)"/>
-    <path d="M 250 154 L 300 208" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#e4)"/>
-    <text x="252" y="94" font-size="9" fill="currentColor" opacity=".7">"records"</text>
-    <text x="252" y="200" font-size="9" fill="currentColor" opacity=".7">"insurance"</text>
+    <path class="ln-d" d="M 250 126 L 300 72" marker-end="url(#ar)"/>
+    <path class="ln-d" d="M 250 154 L 300 208" marker-end="url(#ar)"/>
+    <text class="lbl" x="252" y="94" font-size="9">"records"</text>
+    <text class="lbl" x="252" y="200" font-size="9">"insurance"</text>
 
-    <rect x="306" y="40" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="381" y="62" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">retrieve_medical</text>
-    <text x="381" y="78" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">病历向量库</text>
+    <rect class="bx-p" x="306" y="40" width="150" height="52" rx="6"/>
+    <text class="ttl on-p" x="381" y="62" text-anchor="middle" font-size="10.5">retrieve_medical</text>
+    <text class="lbl" x="381" y="78" text-anchor="middle" font-size="9">病历向量库</text>
 
-    <rect x="306" y="188" width="150" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="381" y="210" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">retrieve_insurance</text>
-    <text x="381" y="226" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">保险 FAQ 向量库</text>
+    <rect class="bx-p" x="306" y="188" width="150" height="52" rx="6"/>
+    <text class="ttl on-p" x="381" y="210" text-anchor="middle" font-size="10.5">retrieve_insurance</text>
+    <text class="lbl" x="381" y="226" text-anchor="middle" font-size="9">保险 FAQ 向量库</text>
 
-    <path d="M 460 66 L 510 66 L 510 126" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#e4)"/>
-    <path d="M 460 214 L 510 214 L 510 154" fill="none" stroke="currentColor" stroke-width="1.4" marker-end="url(#e4)"/>
+    <path class="ln" d="M 460 66 L 510 66 L 510 126" marker-end="url(#ar)"/>
+    <path class="ln" d="M 460 214 L 510 214 L 510 154" marker-end="url(#ar)"/>
 
-    <rect x="450" y="112" width="130" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="515" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">generate_answer</text>
-    <text x="515" y="151" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">按 domain 选提示词</text>
+    <rect class="bx-a" x="450" y="112" width="130" height="56" rx="6"/>
+    <text class="ttl on-a" x="515" y="134" text-anchor="middle" font-size="11">generate_answer</text>
+    <text class="lbl" x="515" y="151" text-anchor="middle" font-size="9">按 domain 选提示词</text>
 
-    <line x1="584" y1="140" x2="628" y2="140" stroke="currentColor" stroke-width="1.4" marker-end="url(#e4)"/>
-    <circle cx="652" cy="140" r="20" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="652" y="144" text-anchor="middle" font-size="9" fill="currentColor">END</text>
+    <line class="ln" x1="584" y1="140" x2="628" y2="140" marker-end="url(#ar)"/>
+    <circle class="bx-d" cx="652" cy="140" r="20"/>
+    <text x="652" y="144" text-anchor="middle" font-size="9">END</text>
 
-    <text x="350" y="268" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">虚线 = 条件边（<tspan font-family="monospace">add_conditional_edges</tspan>），实线 = 固定边（<tspan font-family="monospace">add_edge</tspan>）</text>
+    <text class="lbl" x="350" y="268" text-anchor="middle" font-size="10.5">虚线 = 条件边（<tspan class="mono">add_conditional_edges</tspan>），实线 = 固定边（<tspan class="mono">add_edge</tspan>）</text>
   </svg>
-  </div>
-  <figcaption>路由架构。条件边把「一张图」变成「多条可能路径」，路径的选择权交给了 LLM。</figcaption>
+<figcaption><span class="fig-n">图 5-4</span>路由架构。条件边把「一张图」变成「多条可能路径」，路径的选择权交给了 LLM。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch5/{py,js}/c-multi-rag</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> typing <span class="k">import</span> Annotated, Literal, TypedDict
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch5/{py,js}/c-multi-rag</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> typing <span class="k">import</span> Annotated, Literal, TypedDict
 
 <span class="k">from</span> langchain_core.documents <span class="k">import</span> Document
 <span class="k">from</span> langchain_core.messages <span class="k">import</span> HumanMessage, SystemMessage
@@ -438,8 +387,8 @@ builder.<span class="f">add_edge</span>(<span class="s">"generate_answer"</span>
 graph = builder.<span class="f">compile</span>()
 
 <span class="k">for</span> chunk <span class="k">in</span> graph.<span class="f">stream</span>({<span class="s">"user_query"</span>: <span class="s">"新冠治疗在我的保险范围内吗？"</span>}):
-    <span class="f">print</span>(chunk)</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">function</span> <span class="f">pickRetriever</span>(state) {
+    <span class="f">print</span>(chunk)</code></pre>
+<pre data-lang="js"><code><span class="k">function</span> <span class="f">pickRetriever</span>(state) {
   <span class="k">return</span> state.domain === <span class="s">'records'</span>
     ? <span class="s">'retrieve_medical_records'</span>
     : <span class="s">'retrieve_insurance_faqs'</span>;
@@ -455,18 +404,18 @@ graph = builder.<span class="f">compile</span>()
   .<span class="f">addEdge</span>(<span class="s">'retrieve_medical_records'</span>, <span class="s">'generate_answer'</span>)
   .<span class="f">addEdge</span>(<span class="s">'retrieve_insurance_faqs'</span>, <span class="s">'generate_answer'</span>)
   .<span class="f">addEdge</span>(<span class="s">'generate_answer'</span>, END)
-  .<span class="f">compile</span>();</code></pre></div>
+  .<span class="f">compile</span>();</code></pre>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">条件边函数返回的是节点名</p>
+<div class="box warn">
+  <div class="t">&#9888; 条件边函数返回的是节点名</div>
   <p>这是新手最容易搞混的地方：<strong>普通节点返回「状态更新字典」，条件边函数返回「下一个节点的名字字符串」</strong>（或 <code>END</code>）。返回错了会报节点找不到。</p>
-  <p style="margin-bottom:0">另外建议给 <code>add_conditional_edges</code> 传第三个参数（可能的目标节点列表），这样画出来的图才会显示所有分支。</p>
+  <p>另外建议给 <code>add_conditional_edges</code> 传第三个参数（可能的目标节点列表），这样画出来的图才会显示所有分支。</p>
 </div>
 
 <h2 id="summary">小结</h2>
 
-<div class="tablewrap">
+<div class="tw">
 <table>
   <thead><tr><th>架构</th><th>LLM 决定</th><th>特征</th><th>典型场景</th></tr></thead>
   <tbody>
@@ -480,11 +429,10 @@ graph = builder.<span class="f">compile</span>()
 
 <p><strong>选型建议：从最右边往左试。</strong>先看单次 LLM 调用够不够，不够再加一步，还不够再加路由。每往右一格，你就多买了一份能力，也多付了一份不可预测性。</p>
 
-<nav class="pager">
-  <a href="ch04.html"><span class="dir">上一章</span><span class="ttl">04 · 用 LangGraph 给机器人加记忆</span></a>
-  <a class="next" href="ch06.html"><span class="dir">下一章</span><span class="ttl">06 · Agent 架构</span></a>
+<nav class="pager" aria-label="章节翻页">
+<a class="prev" href="ch04.html"><span>&larr; 上一章</span>第 4 章 · 加记忆</a>
+<a class="next" href="ch06.html"><span>下一章 &rarr;</span>第 6 章 · Agent 架构</a>
 </nav>
-</div>
 </main>
 </div>
 <script src="assets/course.js"></script>

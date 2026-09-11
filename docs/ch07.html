@@ -1,74 +1,63 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Agent 进阶：反思与多智能体｜Learning LangChain 中文教程</title>
-<meta name="description" content="自我批评循环、子图，以及 Supervisor 多智能体架构。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 7 章 · Agent 进阶：反思与多智能体 — Learning LangChain 中文精读</title>
+<meta name="description" content="生成—批评循环、子图的两种接法、Supervisor 架构">
+<script>try{const t=localStorage.getItem('llc-doc-theme');if(t)document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="stylesheet" href="assets/course.css">
 </head>
-<body>
-<div class="shell">
-<aside class="rail">
-  <a class="brand" href="index.html">
-    <span class="brand__mark">Learning LangChain</span>
-    <span class="brand__name">中文精读教程</span>
-    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
-  </a>
-  <div>
-    <h3>章节</h3>
-    <nav class="chapnav">
-    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
-    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
-    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
-    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
-    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
-    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
-    <a href="ch07.html" aria-current="page"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
-    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
-    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
-    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
-    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
-    </nav>
-  </div>
-  <div>
-    <h3>本章目录</h3>
-    <nav class="toc">
-      <a href="#reflection">反思：让模型给自己挑刺</a>
-      <a href="#subgraph">子图</a>
-      <a href="#multi-agent">多智能体：四种拓扑</a>
-      <a href="#supervisor">实现 Supervisor 架构</a>
-      <a href="#summary">小结</a>
-    </nav>
-  </div>
+<body data-chapter="7">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--fg-faint)"/></marker>
+<marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+</defs></svg>
+<div id="app">
+<aside id="sidebar">
+<a class="brand" href="index.html"><span class="mark" aria-hidden="true">&#129436;</span><span>LangChain 中文精读<small>《Learning LangChain》图解教程</small></span></a>
+<div class="langswitch" role="group" aria-label="示例代码语言"><span>代码</span><button type="button" data-lang-btn="py" aria-pressed="true">Python</button><button type="button" data-lang-btn="js" aria-pressed="false">JavaScript</button></div>
+<div class="part">第一部分 · 知识</div>
+<a class="ch" href="ch01.html"><span class="n">1</span><span>LLM 基础与构建块</span></a>
+<a class="ch" href="ch02.html"><span class="n">2</span><span>RAG 上篇：建索引</span></a>
+<a class="ch" href="ch03.html"><span class="n">3</span><span>RAG 下篇：对话</span></a>
+<div class="part">第二部分 · 记忆</div>
+<a class="ch" href="ch04.html"><span class="n">4</span><span>加记忆</span></a>
+<div class="part">第三部分 · 行动</div>
+<a class="ch" href="ch05.html"><span class="n">5</span><span>认知架构</span></a>
+<a class="ch" href="ch06.html"><span class="n">6</span><span>Agent 架构</span></a>
+<a class="ch active" aria-current="page" href="ch07.html"><span class="n">7</span><span>反思与多智能体</span></a>
+<div class="part">第四部分 · 可信</div>
+<a class="ch" href="ch08.html"><span class="n">8</span><span>实用模式</span></a>
+<a class="ch" href="ch09.html"><span class="n">9</span><span>部署</span></a>
+<a class="ch" href="ch10.html"><span class="n">10</span><span>测试与评估</span></a>
+<div class="part">第五部分 · 产品</div>
+<a class="ch" href="ch11.html"><span class="n">11</span><span>用 LLM 做产品</span></a>
 </aside>
-<main class="main">
-<div class="wrap">
-  <div class="topbar">
-    <span class="crumb">第 07 章</span>
-    <div class="tools">
-      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
-      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
-      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
-    </div>
-  </div>
-<header class="chead">
-  <p class="eyebrow">第 07 章</p>
-  <h1>Agent 进阶：反思与多智能体</h1>
-  <p class="lede">给 Agent 加两样人类团队才有的东西：一个会挑刺的审稿人，和一群各有专长的同事。外加实现这两者都要用到的技术底座——子图。</p>
-</header>
+<main>
+<span class="chapter-eyebrow">第 7 章</span>
+<h1>Agent 进阶：反思与多智能体</h1>
+<p class="lede">给 Agent 加两样人类团队才有的东西：一个会挑刺的审稿人，和一群各有专长的同事。外加实现这两者都要用到的技术底座——子图。</p>
 
-<div class="note">
-  <p class="note__title">读完这一章你会</p>
-  <ul style="margin-bottom:0">
+<div class="goals">
+  <h4>读完这一章你会</h4>
+  <ul>
     <li>实现「生成—反思」循环，并理解它为什么要做角色对调这个小把戏</li>
     <li>用两种方式把子图接进父图，知道各自适用于什么情况</li>
     <li>说清楚四种多智能体拓扑的差别，并实现其中的 Supervisor 架构</li>
   </ul>
 </div>
+
+<nav class="toc" aria-label="本章目录">
+  <div class="h">本章目录</div>
+  <ol>
+    <li><a href="#reflection">反思：让模型给自己挑刺</a></li>
+    <li><a href="#subgraph">子图</a></li>
+    <li><a href="#multi-agent">多智能体：四种拓扑</a></li>
+    <li><a href="#supervisor">实现 Supervisor 架构</a></li>
+    <li><a href="#summary">小结</a></li>
+  </ol>
+</nav>
 
 <h2 id="reflection">反思：让模型给自己挑刺</h2>
 
@@ -77,65 +66,52 @@
 <p>用卡尼曼的话说，这是在用<strong>系统 2</strong>（慢、审慎）去修正<strong>系统 1</strong>（快、直觉）的产物。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 720 300" role="img" aria-label="反思循环：generate 节点写作，reflect 节点批评，批评被伪装成用户消息回灌给 generate；条件边在消息数超过 6 条后终止" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="g1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="40" cy="110" r="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="40" y="114" text-anchor="middle" font-size="8" fill="currentColor">START</text>
-    <line x1="60" y1="110" x2="106" y2="110" stroke="currentColor" stroke-width="1.4" marker-end="url(#g1)"/>
+<svg class="dgm" viewBox="0 0 720 300" role="img" aria-label="反思循环：generate 节点写作，reflect 节点批评，批评被伪装成用户消息回灌给 generate；条件边在消息数超过 6 条后终止">
+    <circle class="bx-d" cx="40" cy="110" r="18"/>
+    <text x="40" y="114" text-anchor="middle" font-size="8">START</text>
+    <line class="ln" x1="60" y1="110" x2="106" y2="110" marker-end="url(#ar)"/>
 
-    <rect x="112" y="84" width="140" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="182" y="106" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">generate</text>
-    <text x="182" y="122" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">「你是写作助手」</text>
+    <rect class="bx-a" x="112" y="84" width="140" height="52" rx="6"/>
+    <text class="ttl on-a" x="182" y="106" text-anchor="middle" font-size="11">generate</text>
+    <text class="lbl" x="182" y="122" text-anchor="middle" font-size="9">「你是写作助手」</text>
 
-    <path d="M 256 96 L 320 60" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#g1)"/>
-    <text x="262" y="66" font-size="9" fill="currentColor" opacity=".75">消息 ≤ 6 条</text>
-    <path d="M 256 124 L 320 160" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#g1)"/>
-    <text x="262" y="160" font-size="9" fill="currentColor" opacity=".75">&gt; 6 条 → 收工</text>
+    <path class="ln-d" d="M 256 96 L 320 60" marker-end="url(#ar)"/>
+    <text class="lbl" x="262" y="66" font-size="9">消息 ≤ 6 条</text>
+    <path class="ln-d" d="M 256 124 L 320 160" marker-end="url(#ar)"/>
+    <text class="lbl" x="262" y="160" font-size="9">&gt; 6 条 → 收工</text>
 
-    <rect x="326" y="30" width="140" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="396" y="52" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">reflect</text>
-    <text x="396" y="68" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">「你是批改作文的老师」</text>
+    <rect class="bx-a" x="326" y="30" width="140" height="52" rx="6"/>
+    <text class="ttl on-a" x="396" y="52" text-anchor="middle" font-size="11">reflect</text>
+    <text class="lbl" x="396" y="68" text-anchor="middle" font-size="9">「你是批改作文的老师」</text>
 
-    <circle cx="360" cy="176" r="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="360" y="180" text-anchor="middle" font-size="8" fill="currentColor">END</text>
+    <circle class="bx-d" cx="360" cy="176" r="18"/>
+    <text x="360" y="180" text-anchor="middle" font-size="8">END</text>
 
-    <path d="M 326 56 L 290 56 L 290 14 L 152 14 L 152 80" fill="none" stroke="currentColor" stroke-width="1.6" marker-end="url(#g1)"/>
+    <path class="ln-a" d="M 326 56 L 290 56 L 290 14 L 152 14 L 152 80" marker-end="url(#ar-a)"/>
 
-    <line x1="16" y1="212" x2="704" y2="212" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <line class="sep" x1="16" y1="212" x2="704" y2="212"/>
 
-    <text x="16" y="236" font-size="10.5" font-weight="600" fill="currentColor">角色对调这个把戏</text>
-    <rect x="16" y="246" width="150" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".55"/>
-    <text x="24" y="260" font-size="9" fill="currentColor" opacity=".8">真实历史：ai 写的草稿</text>
-    <text x="176" y="260" font-size="12" fill="currentColor">→</text>
-    <rect x="192" y="246" width="176" height="20" rx="3" fill="currentColor" opacity=".18"/>
-    <text x="200" y="260" font-size="9" fill="currentColor">reflect 眼中：human 交来的作业</text>
-    <text x="380" y="260" font-size="9.5" fill="currentColor" opacity=".7">← 于是它会像老师一样批改</text>
+    <text class="ttl" x="16" y="236" font-size="10.5">角色对调这个把戏</text>
+    <rect class="bx" x="16" y="246" width="150" height="20" rx="3"/>
+    <text class="lbl" x="24" y="260" font-size="9">真实历史：ai 写的草稿</text>
+    <text x="176" y="260" font-size="12">→</text>
+    <rect class="fl" x="192" y="246" width="176" height="20" rx="3"/>
+    <text x="200" y="260" font-size="9">reflect 眼中：human 交来的作业</text>
+    <text class="lbl" x="380" y="260" font-size="9.5">← 于是它会像老师一样批改</text>
 
-    <rect x="16" y="272" width="150" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="1" opacity=".55"/>
-    <text x="24" y="286" font-size="9" fill="currentColor" opacity=".8">reflect 产出：批评意见</text>
-    <text x="176" y="286" font-size="12" fill="currentColor">→</text>
-    <rect x="192" y="272" width="176" height="20" rx="3" fill="currentColor" opacity=".18"/>
-    <text x="200" y="286" font-size="9" fill="currentColor">generate 眼中：用户提的修改要求</text>
-    <text x="380" y="286" font-size="9.5" fill="currentColor" opacity=".7">← 于是它会照着改</text>
+    <rect class="bx" x="16" y="272" width="150" height="20" rx="3"/>
+    <text class="lbl" x="24" y="286" font-size="9">reflect 产出：批评意见</text>
+    <text x="176" y="286" font-size="12">→</text>
+    <rect class="fl" x="192" y="272" width="176" height="20" rx="3"/>
+    <text x="200" y="286" font-size="9">generate 眼中：用户提的修改要求</text>
+    <text class="lbl" x="380" y="286" font-size="9.5">← 于是它会照着改</text>
   </svg>
-  </div>
-  <figcaption>对话微调过的模型只擅长「人问 AI 答」的节奏，所以两边都要把对方伪装成「人」。</figcaption>
+<figcaption><span class="fig-n">图 7-1</span>对话微调过的模型只擅长「人问 AI 答」的节奏，所以两边都要把对方伪装成「人」。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch7/{py,js}/a-reflection</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> typing <span class="k">import</span> Annotated, TypedDict
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch7/{py,js}/a-reflection</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> typing <span class="k">import</span> Annotated, TypedDict
 
 <span class="k">from</span> langchain_core.messages <span class="k">import</span> AIMessage, BaseMessage, HumanMessage, SystemMessage
 <span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
@@ -189,8 +165,8 @@ builder.<span class="f">add_edge</span>(START, <span class="s">"generate"</span>
 builder.<span class="f">add_conditional_edges</span>(<span class="s">"generate"</span>, should_continue)
 builder.<span class="f">add_edge</span>(<span class="s">"reflect"</span>, <span class="s">"generate"</span>)
 
-graph = builder.<span class="f">compile</span>()</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">async</span> <span class="k">function</span> <span class="f">reflect</span>(state) {
+graph = builder.<span class="f">compile</span>()</code></pre>
+<pre data-lang="js"><code><span class="k">async</span> <span class="k">function</span> <span class="f">reflect</span>(state) {
   <span class="c">// 角色对调</span>
   <span class="k">const</span> clsMap = { ai: HumanMessage, human: AIMessage };
   <span class="k">const</span> translated = [
@@ -212,17 +188,17 @@ graph = builder.<span class="f">compile</span>()</code></pre></div>
   .<span class="f">addEdge</span>(START, <span class="s">'generate'</span>)
   .<span class="f">addConditionalEdges</span>(<span class="s">'generate'</span>, shouldContinue)
   .<span class="f">addEdge</span>(<span class="s">'reflect'</span>, <span class="s">'generate'</span>)
-  .<span class="f">compile</span>();</code></pre></div>
+  .<span class="f">compile</span>();</code></pre>
 </div>
 
-<div class="note">
-  <p class="note__title">两个设计细节</p>
+<div class="box tip">
+  <div class="t">&#128161; 两个设计细节</div>
   <p><strong>为什么在 generate 之后判断结束？</strong>直觉上应该「批评完再改一版就结束」。这里正是这样：循环固定跑 3 轮，最后一轮的<em>修改</em>做完才退出，所以出口挂在 <code>generate</code> 上，而不是 <code>reflect</code>。</p>
-  <p style="margin-bottom:0"><strong>能不能让模型决定停？</strong>能。把 <code>should_continue</code> 换成「让 reflect 判断还有没有意见」即可。固定轮数的好处是延迟和成本可控。</p>
+  <p><strong>能不能让模型决定停？</strong>能。把 <code>should_continue</code> 换成「让 reflect 判断还有没有意见」即可。固定轮数的好处是延迟和成本可控。</p>
 </div>
 
-<div class="note">
-  <p class="note__title">强烈推荐的变体：用真实反馈代替 LLM 批评</p>
+<div class="box tip">
+  <div class="t">&#128161; 强烈推荐的变体：用真实反馈代替 LLM 批评</div>
   <p>如果你在写<strong>代码生成</strong> Agent，在 <code>reflect</code> 之前插一个节点，把生成的代码扔给 linter 或编译器跑一遍，把真实的报错当作批评输入。<strong>只要你的领域存在这种客观校验器，就一定要用上</strong>——它比让 LLM 自己找茬可靠得多。</p>
 </div>
 
@@ -233,63 +209,50 @@ graph = builder.<span class="f">compile</span>()</code></pre></div>
 <p>接法有两种，选哪种<strong>只取决于父图和子图的状态结构是否共享字段</strong>：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 720 260" role="img" aria-label="子图两种接法对比：共享 state 字段时直接把编译后的子图当节点；状态结构不同时用一个包装函数在调用前后做状态转换" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="g2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <text x="16" y="20" font-size="11" font-weight="600" fill="currentColor">① 直接当节点用（共享字段）</text>
-    <rect x="16" y="32" width="310" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"/>
-    <text x="26" y="50" font-size="9" fill="currentColor" opacity=".6">父图 State：{ foo }</text>
+<svg class="dgm" viewBox="0 0 720 260" role="img" aria-label="子图两种接法对比：共享 state 字段时直接把编译后的子图当节点；状态结构不同时用一个包装函数在调用前后做状态转换">
+    <text class="ttl" x="16" y="20" font-size="11">① 直接当节点用（共享字段）</text>
+    <rect class="bx-d" x="16" y="32" width="310" height="90" rx="6"/>
+    <text class="sm" x="26" y="50" font-size="9">父图 State：{ foo }</text>
 
-    <rect x="34" y="58" width="80" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <text x="74" y="86" text-anchor="middle" font-size="10" fill="currentColor">某节点</text>
-    <line x1="118" y1="81" x2="150" y2="81" stroke="currentColor" stroke-width="1.2" marker-end="url(#g2)"/>
-    <rect x="156" y="58" width="152" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="232" y="78" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">subgraph（编译后）</text>
-    <text x="232" y="94" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">State：{ foo, bar }</text>
+    <rect class="bx" x="34" y="58" width="80" height="46" rx="5"/>
+    <text x="74" y="86" text-anchor="middle" font-size="10">某节点</text>
+    <line class="ln" x1="118" y1="81" x2="150" y2="81" marker-end="url(#ar)"/>
+    <rect class="bx-a" x="156" y="58" width="152" height="46" rx="5"/>
+    <text class="ttl on-a" x="232" y="78" text-anchor="middle" font-size="10">subgraph（编译后）</text>
+    <text class="lbl" x="232" y="94" text-anchor="middle" font-size="8.5">State：{ foo, bar }</text>
 
-    <text x="26" y="140" font-size="9.5" fill="currentColor" opacity=".75">通过共享的 foo 通信；父图多余的键子图忽略，</text>
-    <text x="26" y="156" font-size="9.5" fill="currentColor" opacity=".75">子图多余的键父图也忽略。</text>
-    <rect x="26" y="168" width="288" height="22" rx="4" fill="currentColor" opacity=".1"/>
-    <text x="34" y="183" font-size="9" font-family="monospace" fill="currentColor">builder.add_node("subgraph", subgraph)</text>
+    <text class="lbl" x="26" y="140" font-size="9.5">通过共享的 foo 通信；父图多余的键子图忽略，</text>
+    <text class="lbl" x="26" y="156" font-size="9.5">子图多余的键父图也忽略。</text>
+    <rect class="fl" x="26" y="168" width="288" height="22" rx="4"/>
+    <text class="mono" x="34" y="183" font-size="9">builder.add_node("subgraph", subgraph)</text>
 
-    <line x1="360" y1="14" x2="360" y2="240" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <line class="sep" x1="360" y1="14" x2="360" y2="240"/>
 
-    <text x="386" y="20" font-size="11" font-weight="600" fill="currentColor">② 包一层函数（结构不同）</text>
-    <rect x="386" y="32" width="318" height="90" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"/>
-    <text x="396" y="50" font-size="9" fill="currentColor" opacity=".6">父图 State：{ foo }</text>
+    <text class="ttl" x="386" y="20" font-size="11">② 包一层函数（结构不同）</text>
+    <rect class="bx-d" x="386" y="32" width="318" height="90" rx="6"/>
+    <text class="sm" x="396" y="50" font-size="9">父图 State：{ foo }</text>
 
-    <rect x="400" y="58" width="130" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="465" y="78" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">包装函数 node()</text>
-    <text x="465" y="94" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">foo → bar，bar → foo</text>
-    <line x1="534" y1="81" x2="560" y2="81" stroke="currentColor" stroke-width="1.2" marker-end="url(#g2)"/>
-    <rect x="566" y="58" width="128" height="46" rx="5" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="630" y="78" text-anchor="middle" font-size="10" fill="currentColor">subgraph</text>
-    <text x="630" y="94" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">State：{ bar, baz }</text>
+    <rect class="bx-a" x="400" y="58" width="130" height="46" rx="5"/>
+    <text class="ttl on-a" x="465" y="78" text-anchor="middle" font-size="10">包装函数 node()</text>
+    <text class="lbl" x="465" y="94" text-anchor="middle" font-size="8.5">foo → bar，bar → foo</text>
+    <line class="ln" x1="534" y1="81" x2="560" y2="81" marker-end="url(#ar)"/>
+    <rect class="bx" x="566" y="58" width="128" height="46" rx="5"/>
+    <text x="630" y="78" text-anchor="middle" font-size="10">subgraph</text>
+    <text class="lbl" x="630" y="94" text-anchor="middle" font-size="8.5">State：{ bar, baz }</text>
 
-    <text x="396" y="140" font-size="9.5" fill="currentColor" opacity=".75">没有任何共享键，必须手动翻译进出参数。</text>
-    <text x="396" y="156" font-size="9.5" fill="currentColor" opacity=".75">好处是子图完全独立，可以被任意父图复用。</text>
-    <rect x="396" y="168" width="298" height="22" rx="4" fill="currentColor" opacity=".1"/>
-    <text x="404" y="183" font-size="9" font-family="monospace" fill="currentColor">builder.add_node("node", node)  # 不是 subgraph</text>
+    <text class="lbl" x="396" y="140" font-size="9.5">没有任何共享键，必须手动翻译进出参数。</text>
+    <text class="lbl" x="396" y="156" font-size="9.5">好处是子图完全独立，可以被任意父图复用。</text>
+    <rect class="fl" x="396" y="168" width="298" height="22" rx="4"/>
+    <text class="mono" x="404" y="183" font-size="9">builder.add_node("node", node)  # 不是 subgraph</text>
 
-    <text x="360" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">判断依据只有一条：父图和子图有没有共享的状态键。</text>
+    <text class="lbl" x="360" y="228" text-anchor="middle" font-size="10.5">判断依据只有一条：父图和子图有没有共享的状态键。</text>
   </svg>
-  </div>
-  <figcaption>两种接法，代码差别就在 <code>add_node</code> 的第二个参数是「子图」还是「一个调用子图的函数」。</figcaption>
+<figcaption><span class="fig-n">图 7-2</span>两种接法，代码差别就在 <code>add_node</code> 的第二个参数是「子图」还是「一个调用子图的函数」。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch7/{py,js}/b-subgraph-direct · c-subgraph-function</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="c"># ── ① 直接接：foo 是共享键 ───────────────────────────────</span>
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch7/{py,js}/b-subgraph-direct · c-subgraph-function</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="c"># ── ① 直接接：foo 是共享键 ───────────────────────────────</span>
 <span class="k">class</span> <span class="f">State</span>(TypedDict):
     foo: str                    <span class="c"># 与子图共享</span>
 
@@ -327,8 +290,8 @@ graph = builder.<span class="f">compile</span>()
     <span class="k">return</span> {<span class="s">"foo"</span>: response[<span class="s">"bar"</span>]}                       <span class="c"># 出：bar → foo</span>
 
 
-builder.<span class="f">add_node</span>(<span class="s">"node"</span>, node)                <span class="c"># ← 注意是函数，不是子图</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="c">// ① 直接接</span>
+builder.<span class="f">add_node</span>(<span class="s">"node"</span>, node)                <span class="c"># ← 注意是函数，不是子图</span></code></pre>
+<pre data-lang="js"><code><span class="c">// ① 直接接</span>
 <span class="k">const</span> subgraph = <span class="k">new</span> <span class="f">StateGraph</span>(SubgraphStateAnnotation)
   .<span class="f">addNode</span>(<span class="s">'subgraph_node'</span>, subgraphNode)
   .<span class="f">addEdge</span>(START, <span class="s">'subgraph_node'</span>)
@@ -343,11 +306,11 @@ builder.<span class="f">add_node</span>(<span class="s">"node"</span>, node)    
 <span class="k">const</span> subgraphWrapperNode = <span class="k">async</span> (state) =&gt; {
   <span class="k">const</span> response = <span class="k">await</span> subgraph2.<span class="f">invoke</span>({ bar: state.foo });
   <span class="k">return</span> { foo: response.bar };
-};</code></pre></div>
+};</code></pre>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">书里代码的一个疏漏</p>
+<div class="box warn">
+  <div class="t">&#9888; 书里代码的一个疏漏</div>
   <p>原书子图示例没有写 <code>subgraph_builder.add_edge(START, "subgraph_node")</code>，编译时会报 <code>Graph must have an entrypoint</code>。仓库里已经补上了。<strong>任何图（包括子图）都必须有一条从 START 出发的边。</strong></p>
 </div>
 
@@ -356,82 +319,75 @@ builder.<span class="f">add_node</span>(<span class="s">"node"</span>, node)    
 <p>当单个 Agent 出现这些症状时，就该考虑拆了：工具太多选不准、上下文复杂到跟不上、某个子领域需要专门的处理方式。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 740 220" role="img" aria-label="四种多智能体拓扑：网络型任意互连、监督者型集中调度、层级型监督者的监督者、自定义工作流部分确定部分自主" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="g3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
+<svg class="dgm" viewBox="0 0 740 220" role="img" aria-label="四种多智能体拓扑：网络型任意互连、监督者型集中调度、层级型监督者的监督者、自定义工作流部分确定部分自主">
     <!-- network -->
-    <text x="88" y="20" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">网络型</text>
-    <circle cx="50" cy="52" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="126" cy="52" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="50" cy="122" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="126" cy="122" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <line x1="65" y1="52" x2="111" y2="52" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="65" y1="122" x2="111" y2="122" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="50" y1="67" x2="50" y2="107" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="126" y1="67" x2="126" y2="107" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="62" y1="63" x2="114" y2="111" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="114" y1="63" x2="62" y2="111" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <text x="88" y="164" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">人人可通话</text>
-    <text x="88" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">最灵活，最难控</text>
+    <text class="ttl" x="88" y="20" text-anchor="middle" font-size="10.5">网络型</text>
+    <circle class="bx" cx="50" cy="52" r="15"/>
+    <circle class="bx" cx="126" cy="52" r="15"/>
+    <circle class="bx" cx="50" cy="122" r="15"/>
+    <circle class="bx" cx="126" cy="122" r="15"/>
+    <line class="ln" x1="65" y1="52" x2="111" y2="52"/>
+    <line class="ln" x1="65" y1="122" x2="111" y2="122"/>
+    <line class="ln" x1="50" y1="67" x2="50" y2="107"/>
+    <line class="ln" x1="126" y1="67" x2="126" y2="107"/>
+    <line class="ln" x1="62" y1="63" x2="114" y2="111"/>
+    <line class="ln" x1="114" y1="63" x2="62" y2="111"/>
+    <text class="lbl" x="88" y="164" text-anchor="middle" font-size="9">人人可通话</text>
+    <text class="lbl" x="88" y="180" text-anchor="middle" font-size="9">最灵活，最难控</text>
 
-    <line x1="180" y1="12" x2="180" y2="196" stroke="currentColor" stroke-width="1" opacity=".18"/>
+    <line class="sep" x1="180" y1="12" x2="180" y2="196"/>
 
     <!-- supervisor -->
-    <text x="264" y="20" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">监督者型</text>
-    <rect x="238" y="38" width="52" height="28" rx="5" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="264" y="56" text-anchor="middle" font-size="8.5" fill="currentColor">supervisor</text>
-    <circle cx="216" cy="118" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="264" cy="118" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="312" cy="118" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <line x1="252" y1="68" x2="222" y2="102" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
-    <line x1="264" y1="68" x2="264" y2="102" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
-    <line x1="276" y1="68" x2="306" y2="102" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
-    <text x="264" y="164" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">只跟中心说话</text>
-    <text x="264" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">能力/易用性平衡最好</text>
+    <text class="ttl" x="264" y="20" text-anchor="middle" font-size="10.5">监督者型</text>
+    <rect class="bx-a" x="238" y="38" width="52" height="28" rx="5"/>
+    <text x="264" y="56" text-anchor="middle" font-size="8.5">supervisor</text>
+    <circle class="bx" cx="216" cy="118" r="15"/>
+    <circle class="bx" cx="264" cy="118" r="15"/>
+    <circle class="bx" cx="312" cy="118" r="15"/>
+    <line class="ln" x1="252" y1="68" x2="222" y2="102"/>
+    <line class="ln" x1="264" y1="68" x2="264" y2="102"/>
+    <line class="ln" x1="276" y1="68" x2="306" y2="102"/>
+    <text class="lbl" x="264" y="164" text-anchor="middle" font-size="9">只跟中心说话</text>
+    <text class="lbl" x="264" y="180" text-anchor="middle" font-size="9">能力/易用性平衡最好</text>
 
-    <line x1="356" y1="12" x2="356" y2="196" stroke="currentColor" stroke-width="1" opacity=".18"/>
+    <line class="sep" x1="356" y1="12" x2="356" y2="196"/>
 
     <!-- hierarchical -->
-    <text x="446" y="20" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">层级型</text>
-    <rect x="422" y="32" width="48" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="446" y="47" text-anchor="middle" font-size="8" fill="currentColor">总监督</text>
-    <rect x="386" y="76" width="44" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="408" y="90" text-anchor="middle" font-size="7.5" fill="currentColor">监督 A</text>
-    <rect x="462" y="76" width="44" height="20" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="484" y="90" text-anchor="middle" font-size="7.5" fill="currentColor">监督 B</text>
-    <line x1="434" y1="56" x2="414" y2="72" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
-    <line x1="458" y1="56" x2="478" y2="72" stroke="currentColor" stroke-width="1.1" opacity=".8"/>
-    <circle cx="392" cy="126" r="12" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <circle cx="424" cy="126" r="12" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <circle cx="468" cy="126" r="12" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <circle cx="500" cy="126" r="12" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <line x1="402" y1="98" x2="394" y2="112" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="414" y1="98" x2="422" y2="112" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="478" y1="98" x2="470" y2="112" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <line x1="490" y1="98" x2="498" y2="112" stroke="currentColor" stroke-width="1" opacity=".7"/>
-    <text x="446" y="164" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">监督者的监督者</text>
-    <text x="446" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">适合更复杂的控制流</text>
+    <text class="ttl" x="446" y="20" text-anchor="middle" font-size="10.5">层级型</text>
+    <rect class="bx-a" x="422" y="32" width="48" height="22" rx="4"/>
+    <text x="446" y="47" text-anchor="middle" font-size="8">总监督</text>
+    <rect class="bx" x="386" y="76" width="44" height="20" rx="4"/>
+    <text x="408" y="90" text-anchor="middle" font-size="7.5">监督 A</text>
+    <rect class="bx" x="462" y="76" width="44" height="20" rx="4"/>
+    <text x="484" y="90" text-anchor="middle" font-size="7.5">监督 B</text>
+    <line class="ln" x1="434" y1="56" x2="414" y2="72"/>
+    <line class="ln" x1="458" y1="56" x2="478" y2="72"/>
+    <circle class="bx" cx="392" cy="126" r="12"/>
+    <circle class="bx" cx="424" cy="126" r="12"/>
+    <circle class="bx" cx="468" cy="126" r="12"/>
+    <circle class="bx" cx="500" cy="126" r="12"/>
+    <line class="ln" x1="402" y1="98" x2="394" y2="112"/>
+    <line class="ln" x1="414" y1="98" x2="422" y2="112"/>
+    <line class="ln" x1="478" y1="98" x2="470" y2="112"/>
+    <line class="ln" x1="490" y1="98" x2="498" y2="112"/>
+    <text class="lbl" x="446" y="164" text-anchor="middle" font-size="9">监督者的监督者</text>
+    <text class="lbl" x="446" y="180" text-anchor="middle" font-size="9">适合更复杂的控制流</text>
 
-    <line x1="546" y1="12" x2="546" y2="196" stroke="currentColor" stroke-width="1" opacity=".18"/>
+    <line class="sep" x1="546" y1="12" x2="546" y2="196"/>
 
     <!-- custom -->
-    <text x="640" y="20" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">自定义工作流</text>
-    <circle cx="586" cy="60" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="656" cy="60" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="622" cy="126" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="694" cy="126" r="15" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <line x1="601" y1="60" x2="637" y2="60" stroke="currentColor" stroke-width="1.4" marker-end="url(#g3)"/>
-    <line x1="652" y1="74" x2="630" y2="110" stroke="currentColor" stroke-width="1.4" stroke-dasharray="3 2" marker-end="url(#g3)"/>
-    <line x1="637" y1="126" x2="675" y2="126" stroke="currentColor" stroke-width="1.4" marker-end="url(#g3)"/>
-    <text x="640" y="164" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">部分固定，部分自主</text>
-    <text x="640" y="180" text-anchor="middle" font-size="9" fill="currentColor" opacity=".65">实线固定边，虚线条件边</text>
+    <text class="ttl" x="640" y="20" text-anchor="middle" font-size="10.5">自定义工作流</text>
+    <circle class="bx" cx="586" cy="60" r="15"/>
+    <circle class="bx" cx="656" cy="60" r="15"/>
+    <circle class="bx" cx="622" cy="126" r="15"/>
+    <circle class="bx" cx="694" cy="126" r="15"/>
+    <line class="ln" x1="601" y1="60" x2="637" y2="60" marker-end="url(#ar)"/>
+    <line class="ln-d" x1="652" y1="74" x2="630" y2="110" marker-end="url(#ar)"/>
+    <line class="ln" x1="637" y1="126" x2="675" y2="126" marker-end="url(#ar)"/>
+    <text class="lbl" x="640" y="164" text-anchor="middle" font-size="9">部分固定，部分自主</text>
+    <text class="lbl" x="640" y="180" text-anchor="middle" font-size="9">实线固定边，虚线条件边</text>
   </svg>
-  </div>
-  <figcaption>四种拓扑本质上是在问同一个问题：<strong>谁有权决定下一个由谁干活。</strong></figcaption>
+<figcaption><span class="fig-n">图 7-3</span>四种拓扑本质上是在问同一个问题：<strong>谁有权决定下一个由谁干活。</strong></figcaption>
 </figure>
 
 <h2 id="supervisor">实现 Supervisor 架构</h2>
@@ -439,59 +395,46 @@ builder.<span class="f">add_node</span>(<span class="s">"node"</span>, node)    
 <p>监督者节点做的事很简单：<strong>看完整个对话历史，用结构化输出选出下一个该干活的人，或者宣布 FINISH。</strong></p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 620 240" role="img" aria-label="Supervisor 图结构：START 到 supervisor，条件边分流到 researcher、coder 或 END，两个工人干完都回到 supervisor" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="g4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <circle cx="40" cy="118" r="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="40" y="122" text-anchor="middle" font-size="8" fill="currentColor">START</text>
-    <line x1="60" y1="118" x2="106" y2="118" stroke="currentColor" stroke-width="1.4" marker-end="url(#g4)"/>
+<svg class="dgm" viewBox="0 0 620 240" role="img" aria-label="Supervisor 图结构：START 到 supervisor，条件边分流到 researcher、coder 或 END，两个工人干完都回到 supervisor">
+    <circle class="bx-d" cx="40" cy="118" r="18"/>
+    <text x="40" y="122" text-anchor="middle" font-size="8">START</text>
+    <line class="ln" x1="60" y1="118" x2="106" y2="118" marker-end="url(#ar)"/>
 
-    <rect x="112" y="92" width="130" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="2"/>
-    <text x="177" y="114" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">supervisor</text>
-    <text x="177" y="130" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".75">结构化输出 next</text>
+    <rect class="bx-a" x="112" y="92" width="130" height="52" rx="6"/>
+    <text class="ttl on-a" x="177" y="114" text-anchor="middle" font-size="11">supervisor</text>
+    <text class="lbl" x="177" y="130" text-anchor="middle" font-size="8.5">结构化输出 next</text>
 
-    <path d="M 246 104 L 306 56" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#g4)"/>
-    <text x="250" y="66" font-size="8.5" fill="currentColor" opacity=".75">"researcher"</text>
-    <path d="M 246 118 L 306 118" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#g4)"/>
-    <text x="256" y="112" font-size="8.5" fill="currentColor" opacity=".75">"coder"</text>
-    <path d="M 246 132 L 306 186" fill="none" stroke="currentColor" stroke-width="1.3" stroke-dasharray="5 3" marker-end="url(#g4)"/>
-    <text x="250" y="182" font-size="8.5" fill="currentColor" opacity=".75">"FINISH"</text>
+    <path class="ln-d" d="M 246 104 L 306 56" marker-end="url(#ar)"/>
+    <text class="lbl" x="250" y="66" font-size="8.5">"researcher"</text>
+    <path class="ln-d" d="M 246 118 L 306 118" marker-end="url(#ar)"/>
+    <text class="lbl" x="256" y="112" font-size="8.5">"coder"</text>
+    <path class="ln-d" d="M 246 132 L 306 186" marker-end="url(#ar)"/>
+    <text class="lbl" x="250" y="182" font-size="8.5">"FINISH"</text>
 
-    <rect x="312" y="32" width="120" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="372" y="60" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">researcher</text>
+    <rect class="bx" x="312" y="32" width="120" height="46" rx="6"/>
+    <text class="ttl" x="372" y="60" text-anchor="middle" font-size="10.5">researcher</text>
 
-    <rect x="312" y="96" width="120" height="46" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="372" y="124" text-anchor="middle" font-size="10.5" font-weight="600" fill="currentColor">coder</text>
+    <rect class="bx" x="312" y="96" width="120" height="46" rx="6"/>
+    <text class="ttl" x="372" y="124" text-anchor="middle" font-size="10.5">coder</text>
 
-    <circle cx="330" cy="194" r="18" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="3 2"/>
-    <text x="330" y="198" text-anchor="middle" font-size="8" fill="currentColor">END</text>
+    <circle class="bx-d" cx="330" cy="194" r="18"/>
+    <text x="330" y="198" text-anchor="middle" font-size="8">END</text>
 
-    <path d="M 436 55 L 480 55 L 480 14 L 148 14 L 148 88" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#g4)"/>
-    <path d="M 436 119 L 500 119 L 500 168 L 177 168 L 177 148" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#g4)"/>
-    <text x="300" y="8" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".65">干完回来汇报</text>
+    <path class="ln" d="M 436 55 L 480 55 L 480 14 L 148 14 L 148 88" marker-end="url(#ar)"/>
+    <path class="ln" d="M 436 119 L 500 119 L 500 168 L 177 168 L 177 148" marker-end="url(#ar)"/>
+    <text class="lbl" x="300" y="8" text-anchor="middle" font-size="8.5">干完回来汇报</text>
 
-    <text x="558" y="100" font-size="9" fill="currentColor" opacity=".65">两个工人的产出</text>
-    <text x="558" y="114" font-size="9" fill="currentColor" opacity=".65">都写进同一个</text>
-    <text x="558" y="128" font-size="9" fill="currentColor" opacity=".65">messages，所以</text>
-    <text x="558" y="142" font-size="9" fill="currentColor" opacity=".65">彼此能看见</text>
+    <text class="lbl" x="558" y="100" font-size="9">两个工人的产出</text>
+    <text class="lbl" x="558" y="114" font-size="9">都写进同一个</text>
+    <text class="lbl" x="558" y="128" font-size="9">messages，所以</text>
+    <text class="lbl" x="558" y="142" font-size="9">彼此能看见</text>
   </svg>
-  </div>
-  <figcaption>结构上和第 5 章的路由器很像，区别在于工人干完会<strong>回到</strong> supervisor，形成循环。</figcaption>
+<figcaption><span class="fig-n">图 7-4</span>结构上和第 5 章的路由器很像，区别在于工人干完会<strong>回到</strong> supervisor，形成循环。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch7/{py,js}/d-supervisor</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> typing <span class="k">import</span> Literal
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch7/{py,js}/d-supervisor</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> typing <span class="k">import</span> Literal
 
 <span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
 <span class="k">from</span> langgraph.graph <span class="k">import</span> END, START, MessagesState, StateGraph
@@ -539,8 +482,8 @@ builder.<span class="f">add_conditional_edges</span>(<span class="s">"supervisor
 builder.<span class="f">add_edge</span>(<span class="s">"researcher"</span>, <span class="s">"supervisor"</span>)
 builder.<span class="f">add_edge</span>(<span class="s">"coder"</span>, <span class="s">"supervisor"</span>)
 
-graph = builder.<span class="f">compile</span>()</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
+graph = builder.<span class="f">compile</span>()</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
 <span class="k">import</span> {
   StateGraph, Annotation, MessagesAnnotation, START, END,
 } <span class="k">from</span> <span class="s">'@langchain/langgraph'</span>;
@@ -577,38 +520,37 @@ graph = builder.<span class="f">compile</span>()</code></pre></div>
   )
   .<span class="f">addEdge</span>(<span class="s">'researcher'</span>, <span class="s">'supervisor'</span>)
   .<span class="f">addEdge</span>(<span class="s">'coder'</span>, <span class="s">'supervisor'</span>)
-  .<span class="f">compile</span>();</code></pre></div>
+  .<span class="f">compile</span>();</code></pre>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">书上代码的两处问题（仓库已修）</p>
-  <ol style="margin-bottom:0">
+<div class="box warn">
+  <div class="t">&#9888; 书上代码的两处问题（仓库已修）</div>
+  <ol>
     <li><strong>supervisor 节点直接返回了模型输出</strong>。节点必须返回状态更新字典，所以要写成 <code>{"next": decision.next}</code>。</li>
     <li><strong><code>"FINISH"</code> 不是一个节点名</strong>，条件边直接返回它会报「找不到节点」。要映射成 <code>END</code>。</li>
   </ol>
 </div>
 
-<div class="note">
-  <p class="note__title">工人名字必须自解释</p>
+<div class="box tip">
+  <div class="t">&#128161; 工人名字必须自解释</div>
   <p>提示词里只会出现 <code>["researcher", "coder"]</code> 这样的名字。如果叫 <code>agent_1</code> / <code>agent_2</code>，LLM 完全没有依据做选择。名字起不好就在提示里补一段每个工人的能力描述。</p>
 </div>
 
 <h2 id="summary">小结</h2>
 
-<div class="grid2">
-  <div class="card"><p class="card__meta">记住这个</p><h4>反思 = 生成 ↔ 批评 + 角色对调</h4><p>对调是为了迎合对话微调模型的「人—AI 交替」节奏。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>有客观校验器就别用 LLM 批评</h4><p>编译器、linter、测试的报错比 LLM 自评可靠得多。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>子图接法看共享键</h4><p>有共享键直接当节点；没有就包一层做状态转换。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>先别急着上多智能体</h4><p>书里明说：新建 Agent 应该<strong>从第 6 章那个简单架构起步</strong>，遇到瓶颈再拆。</p></div>
+<div class="cards">
+  <div class="card"><span class="meta">记住这个</span><h4>反思 = 生成 ↔ 批评 + 角色对调</h4><p>对调是为了迎合对话微调模型的「人—AI 交替」节奏。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>有客观校验器就别用 LLM 批评</h4><p>编译器、linter、测试的报错比 LLM 自评可靠得多。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>子图接法看共享键</h4><p>有共享键直接当节点；没有就包一层做状态转换。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>先别急着上多智能体</h4><p>书里明说：新建 Agent 应该<strong>从第 6 章那个简单架构起步</strong>，遇到瓶颈再拆。</p></div>
 </div>
 
 <p>能力越强，越不可预测。下一章正面处理这件事：怎么在不牺牲能力的前提下把可靠性提上来。</p>
 
-<nav class="pager">
-  <a href="ch06.html"><span class="dir">上一章</span><span class="ttl">06 · Agent 架构</span></a>
-  <a class="next" href="ch08.html"><span class="dir">下一章</span><span class="ttl">08 · 榨干 LLM 的实用模式</span></a>
+<nav class="pager" aria-label="章节翻页">
+<a class="prev" href="ch06.html"><span>&larr; 上一章</span>第 6 章 · Agent 架构</a>
+<a class="next" href="ch08.html"><span>下一章 &rarr;</span>第 8 章 · 实用模式</a>
 </nav>
-</div>
 </main>
 </div>
 <script src="assets/course.js"></script>

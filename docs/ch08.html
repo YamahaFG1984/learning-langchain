@@ -1,70 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>榨干 LLM 的实用模式｜Learning LangChain 中文教程</title>
-<meta name="description" content="结构化输出、流式中间结果、人在环路、并发输入。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 8 章 · 榨干 LLM 的实用模式 — Learning LangChain 中文精读</title>
+<meta name="description" content="结构化输出、流式输出、人在环路与并发输入">
+<script>try{const t=localStorage.getItem('llc-doc-theme');if(t)document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="stylesheet" href="assets/course.css">
 </head>
-<body>
-<div class="shell">
-<aside class="rail">
-  <a class="brand" href="index.html">
-    <span class="brand__mark">Learning LangChain</span>
-    <span class="brand__name">中文精读教程</span>
-    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
-  </a>
-  <div>
-    <h3>章节</h3>
-    <nav class="chapnav">
-    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
-    <a href="ch02.html"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
-    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
-    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
-    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
-    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
-    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
-    <a href="ch08.html" aria-current="page"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
-    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
-    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
-    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
-    </nav>
-  </div>
-  <div>
-    <h3>本章目录</h3>
-    <nav class="toc">
-      <a href="#frontier">前沿曲线</a>
-      <a href="#structured">技巧一：结构化输出</a>
-      <a href="#streaming">技巧二：流式中间输出</a>
-      <a href="#hitl">技巧三：人在环路</a>
-      <a href="#double-texting">技巧四：用户连发两条怎么办</a>
-      <a href="#summary">小结</a>
-    </nav>
-  </div>
+<body data-chapter="8">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--fg-faint)"/></marker>
+<marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+</defs></svg>
+<div id="app">
+<aside id="sidebar">
+<a class="brand" href="index.html"><span class="mark" aria-hidden="true">&#129436;</span><span>LangChain 中文精读<small>《Learning LangChain》图解教程</small></span></a>
+<div class="langswitch" role="group" aria-label="示例代码语言"><span>代码</span><button type="button" data-lang-btn="py" aria-pressed="true">Python</button><button type="button" data-lang-btn="js" aria-pressed="false">JavaScript</button></div>
+<div class="part">第一部分 · 知识</div>
+<a class="ch" href="ch01.html"><span class="n">1</span><span>LLM 基础与构建块</span></a>
+<a class="ch" href="ch02.html"><span class="n">2</span><span>RAG 上篇：建索引</span></a>
+<a class="ch" href="ch03.html"><span class="n">3</span><span>RAG 下篇：对话</span></a>
+<div class="part">第二部分 · 记忆</div>
+<a class="ch" href="ch04.html"><span class="n">4</span><span>加记忆</span></a>
+<div class="part">第三部分 · 行动</div>
+<a class="ch" href="ch05.html"><span class="n">5</span><span>认知架构</span></a>
+<a class="ch" href="ch06.html"><span class="n">6</span><span>Agent 架构</span></a>
+<a class="ch" href="ch07.html"><span class="n">7</span><span>反思与多智能体</span></a>
+<div class="part">第四部分 · 可信</div>
+<a class="ch active" aria-current="page" href="ch08.html"><span class="n">8</span><span>实用模式</span></a>
+<a class="ch" href="ch09.html"><span class="n">9</span><span>部署</span></a>
+<a class="ch" href="ch10.html"><span class="n">10</span><span>测试与评估</span></a>
+<div class="part">第五部分 · 产品</div>
+<a class="ch" href="ch11.html"><span class="n">11</span><span>用 LLM 做产品</span></a>
 </aside>
-<main class="main">
-<div class="wrap">
-  <div class="topbar">
-    <span class="crumb">第 08 章</span>
-    <div class="tools">
-      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
-      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
-      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
-    </div>
-  </div>
-<header class="chead">
-  <p class="eyebrow">第 08 章</p>
-  <h1>榨干 LLM 的实用模式</h1>
-  <p class="lede">自主性和可靠性天生互相拉扯。这一章讲的四类技巧，目的都是同一个：<strong>把这条取舍曲线整体往外推</strong>——同样的可靠性下拿到更多自主性，或者反过来。</p>
-</header>
+<main>
+<span class="chapter-eyebrow">第 8 章</span>
+<h1>榨干 LLM 的实用模式</h1>
+<p class="lede">自主性和可靠性天生互相拉扯。这一章讲的四类技巧，目的都是同一个：<strong>把这条取舍曲线整体往外推</strong>——同样的可靠性下拿到更多自主性，或者反过来。</p>
 
-<div class="note">
-  <p class="note__title">读完这一章你会</p>
-  <ul style="margin-bottom:0">
+<div class="goals">
+  <h4>读完这一章你会</h4>
+  <ul>
     <li>用「前沿曲线」这个模型解释为什么不存在「又快又稳又自主」的架构</li>
     <li>选对 <code>stream_mode</code>，让高延迟变得可以忍受</li>
     <li>用 interrupt / authorize / resume / edit / fork 五种人在环路手法接管运行中的图</li>
@@ -72,50 +49,55 @@
   </ul>
 </div>
 
+<nav class="toc" aria-label="本章目录">
+  <div class="h">本章目录</div>
+  <ol>
+    <li><a href="#frontier">前沿曲线</a></li>
+    <li><a href="#structured">技巧一：结构化输出</a></li>
+    <li><a href="#streaming">技巧二：流式中间输出</a></li>
+    <li><a href="#hitl">技巧三：人在环路</a></li>
+    <li><a href="#double-texting">技巧四：用户连发两条怎么办</a></li>
+    <li><a href="#summary">小结</a></li>
+  </ol>
+</nav>
+
 <h2 id="frontier">前沿曲线</h2>
 
-<p>先建立一个共同的心智模型。横轴是<span class="kbd-term">自主性</span>（它能自己干多少事），纵轴是<span class="kbd-term">可靠性</span>（你能多信任它的输出）。第 5–7 章的每种架构都落在这条曲线上的某一点。</p>
+<p>先建立一个共同的心智模型。横轴是<span class="term">自主性</span>（它能自己干多少事），纵轴是<span class="term">可靠性</span>（你能多信任它的输出）。第 5–7 章的每种架构都落在这条曲线上的某一点。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 300" role="img" aria-label="自主性与可靠性的前沿曲线：各种架构落在同一条曲线上；本章技巧的目标是把整条曲线向外推" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="h1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <line x1="70" y1="250" x2="620" y2="250" stroke="currentColor" stroke-width="1.2" marker-end="url(#h1)"/>
-    <text x="620" y="272" text-anchor="end" font-size="11" fill="currentColor" opacity=".65">自主性</text>
-    <line x1="70" y1="250" x2="70" y2="40" stroke="currentColor" stroke-width="1.2" marker-end="url(#h1)"/>
-    <text x="58" y="48" text-anchor="end" font-size="11" fill="currentColor" opacity=".65">可靠性</text>
+<svg class="dgm" viewBox="0 0 700 300" role="img" aria-label="自主性与可靠性的前沿曲线：各种架构落在同一条曲线上；本章技巧的目标是把整条曲线向外推">
+    <line class="ln" x1="70" y1="250" x2="620" y2="250" marker-end="url(#ar)"/>
+    <text class="lbl" x="620" y="272" text-anchor="end" font-size="11">自主性</text>
+    <line class="ln" x1="70" y1="250" x2="70" y2="40" marker-end="url(#ar)"/>
+    <text class="lbl" x="58" y="48" text-anchor="end" font-size="11">可靠性</text>
 
-    <path d="M 100 70 Q 260 96 350 160 Q 430 216 560 240" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="140" y="60" font-size="10" fill="currentColor" opacity=".7">当前的前沿</text>
+    <path class="ln-a" d="M 100 70 Q 260 96 350 160 Q 430 216 560 240"/>
+    <text class="lbl" x="140" y="60" font-size="10">当前的前沿</text>
 
-    <path d="M 130 52 Q 320 78 420 146 Q 510 210 600 224" fill="none" stroke="currentColor" stroke-width="1.6" stroke-dasharray="6 4" opacity=".65"/>
-    <text x="470" y="118" font-size="10" fill="currentColor" opacity=".7">本章要做的：把它推到这里</text>
-    <path d="M 350 160 L 396 138" fill="none" stroke="currentColor" stroke-width="1.2" marker-end="url(#h1)"/>
+    <path class="ln-d" d="M 130 52 Q 320 78 420 146 Q 510 210 600 224"/>
+    <text class="lbl" x="470" y="118" font-size="10">本章要做的：把它推到这里</text>
+    <path class="ln" d="M 350 160 L 396 138" marker-end="url(#ar)"/>
 
-    <circle cx="132" cy="78" r="4.5" fill="currentColor"/>
-    <text x="144" y="82" font-size="10" fill="currentColor">链</text>
-    <circle cx="270" cy="106" r="4.5" fill="currentColor"/>
-    <text x="282" y="110" font-size="10" fill="currentColor">路由器</text>
-    <circle cx="412" cy="200" r="4.5" fill="currentColor"/>
-    <text x="424" y="204" font-size="10" fill="currentColor">Agent</text>
-    <circle cx="530" cy="236" r="4.5" fill="currentColor"/>
-    <text x="472" y="252" font-size="10" fill="currentColor">多智能体</text>
+    <circle class="dot" cx="132" cy="78" r="4.5"/>
+    <text x="144" y="82" font-size="10">链</text>
+    <circle class="dot" cx="270" cy="106" r="4.5"/>
+    <text x="282" y="110" font-size="10">路由器</text>
+    <circle class="dot" cx="412" cy="200" r="4.5"/>
+    <text x="424" y="204" font-size="10">Agent</text>
+    <circle class="dot" cx="530" cy="236" r="4.5"/>
+    <text x="472" y="252" font-size="10">多智能体</text>
 
-    <text x="350" y="292" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">曲线上每一点都是「某个应用的最优解」；没有普遍更好的架构，只有更合适的。</text>
+    <text class="sm" x="350" y="292" text-anchor="middle" font-size="10.5">曲线上每一点都是「某个应用的最优解」；没有普遍更好的架构，只有更合适的。</text>
   </svg>
-  </div>
-  <figcaption>还有三个次要目标也在互相拉扯：<strong>延迟</strong>（尽快出结果）、<strong>自治</strong>（少打扰人）、<strong>方差</strong>（每次结果尽量一致）。</figcaption>
+<figcaption><span class="fig-n">图 8-1</span>还有三个次要目标也在互相拉扯：<strong>延迟</strong>（尽快出结果）、<strong>自治</strong>（少打扰人）、<strong>方差</strong>（每次结果尽量一致）。</figcaption>
 </figure>
 
 <h2 id="structured">技巧一：结构化输出</h2>
 
 <p>要求模型按预定义的格式输出，输出就更可预测。三种实现方式，<code>with_structured_output</code> 会替你挑最合适的那个：</p>
 
-<div class="tablewrap">
+<div class="tw">
 <table>
   <thead><tr><th>方式</th><th>原理</th><th>保证程度</th></tr></thead>
   <tbody>
@@ -126,15 +108,9 @@
 </table>
 </div>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch8/{py,js}/a-structured-output</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch8/{py,js}/a-structured-output</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
 <span class="k">from</span> pydantic <span class="k">import</span> BaseModel, Field
 
 
@@ -147,8 +123,8 @@
 model = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1"</span>, temperature=<span class="n">0</span>).<span class="f">with_structured_output</span>(Joke)
 
 <span class="f">print</span>(model.<span class="f">invoke</span>(<span class="s">"Tell me a joke about cats"</span>))
-<span class="c"># Joke(setup="Why don't cats play poker in the wild?", punchline='Too many cheetahs.')</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
+<span class="c"># Joke(setup="Why don't cats play poker in the wild?", punchline='Too many cheetahs.')</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
 <span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
 
 <span class="k">const</span> joke = z.<span class="f">object</span>({
@@ -159,11 +135,11 @@ model = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1"</span>
 <span class="k">const</span> model = <span class="k">new</span> <span class="f">ChatOpenAI</span>({ model: <span class="s">'gpt-4.1'</span>, temperature: <span class="n">0</span> })
   .<span class="f">withStructuredOutput</span>(joke);
 
-console.<span class="f">log</span>(<span class="k">await</span> model.<span class="f">invoke</span>(<span class="s">'Tell me a joke about cats'</span>));</code></pre></div>
+console.<span class="f">log</span>(<span class="k">await</span> model.<span class="f">invoke</span>(<span class="s">'Tell me a joke about cats'</span>));</code></pre>
 </div>
 
-<div class="note">
-  <p class="note__title">传 Pydantic / Zod 对象的额外好处</p>
+<div class="box tip">
+  <div class="t">&#128161; 传 Pydantic / Zod 对象的额外好处</div>
   <p>schema 会被用于<strong>两次</strong>：转成 JSON Schema 发给模型，以及校验模型的返回。如果模型给了不合规的东西，你拿到的是一个校验错误，而不是一份悄悄坏掉的数据。</p>
 </div>
 
@@ -174,67 +150,59 @@ console.<span class="f">log</span>(<span class="k">await</span> model.<span clas
 <p>LangGraph 的 <code>stream()</code> 支持多种模式，选对了能同时解决「进度可见」和「结果可用」两件事：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 720 250" role="img" aria-label="四种 stream_mode 的产出粒度对比：updates 每个节点一条更新，values 每步完整状态，messages 逐 token，debug 详细事件" xmlns="http://www.w3.org/2000/svg">
-    <text x="16" y="20" font-size="10.5" font-weight="600" fill="currentColor">时间轴 →</text>
-    <line x1="120" y1="26" x2="700" y2="26" stroke="currentColor" stroke-width="1" opacity=".25"/>
-    <line x1="200" y1="20" x2="200" y2="220" stroke="currentColor" stroke-width="1" opacity=".15"/>
-    <line x1="360" y1="20" x2="360" y2="220" stroke="currentColor" stroke-width="1" opacity=".15"/>
-    <line x1="520" y1="20" x2="520" y2="220" stroke="currentColor" stroke-width="1" opacity=".15"/>
-    <text x="160" y="18" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">select_tools</text>
-    <text x="280" y="18" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">model</text>
-    <text x="440" y="18" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">tools</text>
-    <text x="600" y="18" text-anchor="middle" font-size="9" fill="currentColor" opacity=".55">model</text>
+<svg class="dgm" viewBox="0 0 720 250" role="img" aria-label="四种 stream_mode 的产出粒度对比：updates 每个节点一条更新，values 每步完整状态，messages 逐 token，debug 详细事件">
+    <text class="ttl" x="16" y="20" font-size="10.5">时间轴 →</text>
+    <line class="sep" x1="120" y1="26" x2="700" y2="26"/>
+    <line class="sep" x1="200" y1="20" x2="200" y2="220"/>
+    <line class="sep" x1="360" y1="20" x2="360" y2="220"/>
+    <line class="sep" x1="520" y1="20" x2="520" y2="220"/>
+    <text class="sm" x="160" y="18" text-anchor="middle" font-size="9">select_tools</text>
+    <text class="sm" x="280" y="18" text-anchor="middle" font-size="9">model</text>
+    <text class="sm" x="440" y="18" text-anchor="middle" font-size="9">tools</text>
+    <text class="sm" x="600" y="18" text-anchor="middle" font-size="9">model</text>
 
-    <text x="16" y="56" font-size="10" font-family="monospace" fill="currentColor">updates</text>
-    <rect x="176" y="42" width="48" height="18" rx="3" fill="currentColor" opacity=".22"/>
-    <rect x="336" y="42" width="48" height="18" rx="3" fill="currentColor" opacity=".22"/>
-    <rect x="496" y="42" width="48" height="18" rx="3" fill="currentColor" opacity=".22"/>
-    <rect x="656" y="42" width="48" height="18" rx="3" fill="currentColor" opacity=".22"/>
-    <text x="16" y="72" font-size="8.5" fill="currentColor" opacity=".6">默认。每个节点结束时给出「它改了什么」</text>
+    <text class="mono" x="16" y="56" font-size="10">updates</text>
+    <rect class="fl" x="176" y="42" width="48" height="18" rx="3"/>
+    <rect class="fl" x="336" y="42" width="48" height="18" rx="3"/>
+    <rect class="fl" x="496" y="42" width="48" height="18" rx="3"/>
+    <rect class="fl" x="656" y="42" width="48" height="18" rx="3"/>
+    <text class="sm" x="16" y="72" font-size="8.5">默认。每个节点结束时给出「它改了什么」</text>
 
-    <text x="16" y="106" font-size="10" font-family="monospace" fill="currentColor">values</text>
-    <rect x="176" y="92" width="48" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="336" y="92" width="48" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="496" y="92" width="48" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="656" y="92" width="48" height="18" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <text x="16" y="122" font-size="8.5" fill="currentColor" opacity=".6">每步给出「当前完整状态」。UI 直接映射状态时好用</text>
+    <text class="mono" x="16" y="106" font-size="10">values</text>
+    <rect class="bx" x="176" y="92" width="48" height="18" rx="3"/>
+    <rect class="bx" x="336" y="92" width="48" height="18" rx="3"/>
+    <rect class="bx" x="496" y="92" width="48" height="18" rx="3"/>
+    <rect class="bx" x="656" y="92" width="48" height="18" rx="3"/>
+    <text class="sm" x="16" y="122" font-size="8.5">每步给出「当前完整状态」。UI 直接映射状态时好用</text>
 
-    <text x="16" y="156" font-size="10" font-family="monospace" fill="currentColor">messages</text>
-    <rect x="264" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="274" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="284" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="294" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="584" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="594" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="604" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="614" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="624" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <rect x="634" y="142" width="6" height="18" rx="1" fill="currentColor" opacity=".35"/>
-    <text x="16" y="172" font-size="8.5" fill="currentColor" opacity=".6">逐 token。聊天界面「一个字一个字蹦」就靠它</text>
+    <text class="mono" x="16" y="156" font-size="10">messages</text>
+    <rect class="fl" x="264" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="274" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="284" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="294" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="584" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="594" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="604" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="614" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="624" y="142" width="6" height="18" rx="1"/>
+    <rect class="fl" x="634" y="142" width="6" height="18" rx="1"/>
+    <text class="sm" x="16" y="172" font-size="8.5">逐 token。聊天界面「一个字一个字蹦」就靠它</text>
 
-    <text x="16" y="206" font-size="10" font-family="monospace" fill="currentColor">debug</text>
-    <rect x="150" y="192" width="100" height="18" rx="3" fill="currentColor" opacity=".12"/>
-    <rect x="310" y="192" width="100" height="18" rx="3" fill="currentColor" opacity=".12"/>
-    <rect x="470" y="192" width="100" height="18" rx="3" fill="currentColor" opacity=".12"/>
-    <rect x="630" y="192" width="74" height="18" rx="3" fill="currentColor" opacity=".12"/>
-    <text x="16" y="222" font-size="8.5" fill="currentColor" opacity=".6">checkpoint / task / task_result 全量事件，排查问题用</text>
+    <text class="mono" x="16" y="206" font-size="10">debug</text>
+    <rect class="fl" x="150" y="192" width="100" height="18" rx="3"/>
+    <rect class="fl" x="310" y="192" width="100" height="18" rx="3"/>
+    <rect class="fl" x="470" y="192" width="100" height="18" rx="3"/>
+    <rect class="fl" x="630" y="192" width="74" height="18" rx="3"/>
+    <text class="sm" x="16" y="222" font-size="8.5">checkpoint / task / task_result 全量事件，排查问题用</text>
 
-    <text x="360" y="244" text-anchor="middle" font-size="10" fill="currentColor" opacity=".62">可以同时要多种：<tspan font-family="monospace">stream_mode=["updates", "messages"]</tspan></text>
+    <text class="sm" x="360" y="244" text-anchor="middle" font-size="10">可以同时要多种：<tspan class="mono">stream_mode=["updates", "messages"]</tspan></text>
   </svg>
-  </div>
-  <figcaption>粒度从粗到细。<code>updates</code> 告诉用户「现在走到哪一步」，<code>messages</code> 让最终回答边生成边显示。</figcaption>
+<figcaption><span class="fig-n">图 8-2</span>粒度从粗到细。<code>updates</code> 告诉用户「现在走到哪一步」，<code>messages</code> 让最终回答边生成边显示。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch8/{py,js}/b-streaming-output</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> agent <span class="k">import</span> QUESTION, build_graph   <span class="c"># 第 6 章「工具太多」那个图</span>
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch8/{py,js}/b-streaming-output</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> agent <span class="k">import</span> QUESTION, build_graph   <span class="c"># 第 6 章「工具太多」那个图</span>
 
 graph = <span class="f">build_graph</span>()
 input = {<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>(QUESTION)]}
@@ -246,8 +214,8 @@ input = {<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>
 <span class="c"># ② 看内容：逐 token 输出图内任何一次 LLM 调用</span>
 <span class="k">for</span> chunk, metadata <span class="k">in</span> graph.<span class="f">stream</span>(input, stream_mode=<span class="s">"messages"</span>):
     <span class="k">if</span> chunk.content:
-        <span class="f">print</span>(chunk.content, end=<span class="s">""</span>, flush=<span class="k">True</span>)</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">const</span> input = { messages: [<span class="k">new</span> <span class="f">HumanMessage</span>(QUESTION)] };
+        <span class="f">print</span>(chunk.content, end=<span class="s">""</span>, flush=<span class="k">True</span>)</code></pre>
+<pre data-lang="js"><code><span class="k">const</span> input = { messages: [<span class="k">new</span> <span class="f">HumanMessage</span>(QUESTION)] };
 
 <span class="c">// ① 看进度</span>
 <span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> c <span class="k">of</span> <span class="k">await</span> graph.<span class="f">stream</span>(input, { streamMode: <span class="s">'updates'</span> })) {
@@ -257,11 +225,11 @@ input = {<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>
 <span class="c">// ② 看内容（逐 token）</span>
 <span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> [chunk] <span class="k">of</span> <span class="k">await</span> graph.<span class="f">stream</span>(input, { streamMode: <span class="s">'messages'</span> })) {
   <span class="k">if</span> (chunk.content) process.stdout.<span class="f">write</span>(String(chunk.content));
-}</code></pre></div>
+}</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更</div>
   <p>书里用 <code>astream_events(input, version="v2")</code> 再手工筛 <code>on_chat_model_stream</code> 事件来做逐 token 输出。现在直接用 <code>stream_mode="messages"</code> 就行，简洁得多。<code>astream_events</code> 仍然可用，但已不是首选。</p>
 </div>
 
@@ -270,73 +238,60 @@ input = {<span class="s">"messages"</span>: [<span class="f">HumanMessage</span>
 <p>越自主的架构，越需要一个「人能插手」的口子。LangGraph 因为把状态集中管理，这件事变得很自然。<strong>所有人在环路手法的前提都是：编译时挂了 checkpointer。</strong></p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 740 320" role="img" aria-label="人在环路的五种手法在同一条执行时间线上的位置：interrupt 中途叫停、authorize 到指定节点前自动停、resume 继续、edit state 改状态后继续、fork 回到历史某个检查点重跑" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="h2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <text x="16" y="20" font-size="10.5" font-weight="600" fill="currentColor">一次运行的检查点序列（每步一个 checkpoint）</text>
-    <line x1="40" y1="66" x2="700" y2="66" stroke="currentColor" stroke-width="1.2" opacity=".35"/>
-    <circle cx="90" cy="66" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="90" y="52" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">c0</text>
-    <circle cx="240" cy="66" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="240" y="52" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">c1</text>
-    <circle cx="390" cy="66" r="7" fill="currentColor"/>
-    <text x="390" y="52" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">c2</text>
-    <circle cx="540" cy="66" r="7" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="540" y="52" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">c3</text>
-    <text x="165" y="86" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">select_tools</text>
-    <text x="315" y="86" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">model</text>
-    <text x="465" y="86" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">tools</text>
-    <text x="620" y="86" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".55">model</text>
+<svg class="dgm" viewBox="0 0 740 320" role="img" aria-label="人在环路的五种手法在同一条执行时间线上的位置：interrupt 中途叫停、authorize 到指定节点前自动停、resume 继续、edit state 改状态后继续、fork 回到历史某个检查点重跑">
+    <text class="ttl" x="16" y="20" font-size="10.5">一次运行的检查点序列（每步一个 checkpoint）</text>
+    <line class="sep" x1="40" y1="66" x2="700" y2="66"/>
+    <circle class="bx" cx="90" cy="66" r="7"/>
+    <text class="lbl" x="90" y="52" text-anchor="middle" font-size="8.5">c0</text>
+    <circle class="bx" cx="240" cy="66" r="7"/>
+    <text class="lbl" x="240" y="52" text-anchor="middle" font-size="8.5">c1</text>
+    <circle class="dot" cx="390" cy="66" r="7"/>
+    <text class="lbl" x="390" y="52" text-anchor="middle" font-size="8.5">c2</text>
+    <circle class="bx" cx="540" cy="66" r="7"/>
+    <text class="lbl" x="540" y="52" text-anchor="middle" font-size="8.5">c3</text>
+    <text class="sm" x="165" y="86" text-anchor="middle" font-size="8.5">select_tools</text>
+    <text class="sm" x="315" y="86" text-anchor="middle" font-size="8.5">model</text>
+    <text class="sm" x="465" y="86" text-anchor="middle" font-size="8.5">tools</text>
+    <text class="sm" x="620" y="86" text-anchor="middle" font-size="8.5">model</text>
 
     <!-- interrupt -->
-    <line x1="330" y1="132" x2="330" y2="78" stroke="currentColor" stroke-width="1.4" marker-end="url(#h2)"/>
-    <rect x="242" y="134" width="176" height="42" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="330" y="151" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">interrupt · 人工叫停</text>
-    <text x="330" y="167" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">状态停在最近一个完成的检查点</text>
+    <line class="ln" x1="330" y1="132" x2="330" y2="78" marker-end="url(#ar)"/>
+    <rect class="bx" x="242" y="134" width="176" height="42" rx="5"/>
+    <text class="ttl" x="330" y="151" text-anchor="middle" font-size="10">interrupt · 人工叫停</text>
+    <text class="lbl" x="330" y="167" text-anchor="middle" font-size="8.5">状态停在最近一个完成的检查点</text>
 
     <!-- authorize -->
-    <line x1="440" y1="196" x2="418" y2="78" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 3" marker-end="url(#h2)"/>
-    <rect x="440" y="198" width="200" height="42" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="540" y="215" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">authorize · 预先设定的暂停</text>
-    <text x="540" y="231" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">interrupt_before=["tools"]，调工具前必停</text>
+    <line class="ln-d" x1="440" y1="196" x2="418" y2="78" marker-end="url(#ar)"/>
+    <rect class="bx" x="440" y="198" width="200" height="42" rx="5"/>
+    <text class="ttl" x="540" y="215" text-anchor="middle" font-size="10">authorize · 预先设定的暂停</text>
+    <text class="lbl" x="540" y="231" text-anchor="middle" font-size="8.5">interrupt_before=["tools"]，调工具前必停</text>
 
     <!-- resume / restart / edit -->
-    <rect x="40" y="198" width="180" height="86" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 3"/>
-    <text x="130" y="216" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">暂停之后的三个选择</text>
-    <text x="52" y="234" font-size="8.5" fill="currentColor" opacity=".8">· resume：invoke(None, cfg) 接着跑</text>
-    <text x="52" y="250" font-size="8.5" fill="currentColor" opacity=".8">· restart：传新输入，合并后重来</text>
-    <text x="52" y="266" font-size="8.5" fill="currentColor" opacity=".8">· edit：update_state 改完再 resume</text>
+    <rect class="bx-d" x="40" y="198" width="180" height="86" rx="5"/>
+    <text class="ttl" x="130" y="216" text-anchor="middle" font-size="10">暂停之后的三个选择</text>
+    <text class="lbl" x="52" y="234" font-size="8.5">· resume：invoke(None, cfg) 接着跑</text>
+    <text class="lbl" x="52" y="250" font-size="8.5">· restart：传新输入，合并后重来</text>
+    <text class="lbl" x="52" y="266" font-size="8.5">· edit：update_state 改完再 resume</text>
 
     <!-- fork -->
-    <path d="M 240 74 Q 300 130 330 108" fill="none" stroke="currentColor" stroke-width="0"/>
-    <path d="M 240 66 C 300 66 300 292 400 292" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="5 3" marker-end="url(#h2)"/>
-    <rect x="406" y="272" width="230" height="40" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="521" y="289" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">fork · 从历史检查点重开一条分支</text>
-    <text x="521" y="304" text-anchor="middle" font-size="8.5" fill="currentColor" opacity=".7">invoke(None, history[2].config)，原轨迹保留</text>
+    
+    <path class="ln-d" d="M 240 66 C 300 66 300 292 400 292" marker-end="url(#ar)"/>
+    <rect class="bx" x="406" y="272" width="230" height="40" rx="5"/>
+    <text class="ttl" x="521" y="289" text-anchor="middle" font-size="10">fork · 从历史检查点重开一条分支</text>
+    <text class="lbl" x="521" y="304" text-anchor="middle" font-size="8.5">invoke(None, history[2].config)，原轨迹保留</text>
 
-    <text x="676" y="66" font-size="9" fill="currentColor" opacity=".55">…</text>
+    <text class="sm" x="676" y="66" font-size="9">…</text>
   </svg>
-  </div>
-  <figcaption>五种手法作用在同一条时间线的不同位置；共同基础是「每一步都留了一个可回到的检查点」。</figcaption>
+<figcaption><span class="fig-n">图 8-3</span>五种手法作用在同一条时间线的不同位置；共同基础是「每一步都留了一个可回到的检查点」。</figcaption>
 </figure>
 
 <h3>authorize：调工具前先问一句</h3>
 
 <p>最常用的一种：<strong>在指定节点执行前自动停下</strong>，让人确认。典型用于「这条 SQL 真的要执行吗」「这封邮件真的要发吗」。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch8/{py,js}/d-authorize · e-resume</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langgraph.checkpoint.memory <span class="k">import</span> InMemorySaver
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch8/{py,js}/d-authorize · e-resume</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langgraph.checkpoint.memory <span class="k">import</span> InMemorySaver
 
 graph = <span class="f">build_graph</span>(checkpointer=<span class="f">InMemorySaver</span>())
 config = {<span class="s">"configurable"</span>: {<span class="s">"thread_id"</span>: <span class="s">"1"</span>}}
@@ -352,8 +307,8 @@ state = <span class="k">await</span> graph.<span class="f">aget_state</span>(con
 
 <span class="c"># ③ 批准了就用 None 输入继续；None = 「接着上次的往下走」</span>
 <span class="k">async</span> <span class="k">for</span> c <span class="k">in</span> graph.<span class="f">astream</span>(<span class="k">None</span>, config):
-    <span class="f">print</span>(c)</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { MemorySaver } <span class="k">from</span> <span class="s">'@langchain/langgraph'</span>;
+    <span class="f">print</span>(c)</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { MemorySaver } <span class="k">from</span> <span class="s">'@langchain/langgraph'</span>;
 
 <span class="k">const</span> graph = <span class="f">buildGraph</span>({ checkpointer: <span class="k">new</span> <span class="f">MemorySaver</span>() });
 <span class="k">const</span> config = { configurable: { thread_id: <span class="s">'1'</span> } };
@@ -368,20 +323,14 @@ state = <span class="k">await</span> graph.<span class="f">aget_state</span>(con
 console.<span class="f">log</span>(state.next, state.values.messages.<span class="f">at</span>(-<span class="n">1</span>).tool_calls);
 
 <span class="c">// ③ 批准，继续</span>
-<span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> c <span class="k">of</span> <span class="k">await</span> graph.<span class="f">stream</span>(<span class="k">null</span>, config)) console.<span class="f">log</span>(c);</code></pre></div>
+<span class="k">for</span> <span class="k">await</span> (<span class="k">const</span> c <span class="k">of</span> <span class="k">await</span> graph.<span class="f">stream</span>(<span class="k">null</span>, config)) console.<span class="f">log</span>(c);</code></pre>
 </div>
 
 <h3>edit state：不满意就改了再继续</h3>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch8/{py,js}/f-edit-state · g-fork</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="c"># —— 改写模型选的搜索词，再放行 ——————————————————</span>
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch8/{py,js}/f-edit-state · g-fork</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="c"># —— 改写模型选的搜索词，再放行 ——————————————————</span>
 state = graph.<span class="f">get_state</span>(config)
 last = state.values[<span class="s">"messages"</span>][-<span class="n">1</span>]
 
@@ -400,8 +349,8 @@ history = <span class="f">list</span>(graph.<span class="f">get_state_history</s
 <span class="f">for</span> i, s <span class="k">in</span> <span class="f">enumerate</span>(history):
     <span class="f">print</span>(i, <span class="s">"next:"</span>, s.next)
 
-result = graph.<span class="f">invoke</span>(<span class="k">None</span>, history[<span class="n">2</span>].config)   <span class="c"># 从 history[2] 重跑，原轨迹保留</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">const</span> state = <span class="k">await</span> graph.<span class="f">getState</span>(config);
+result = graph.<span class="f">invoke</span>(<span class="k">None</span>, history[<span class="n">2</span>].config)   <span class="c"># 从 history[2] 重跑，原轨迹保留</span></code></pre>
+<pre data-lang="js"><code><span class="k">const</span> state = <span class="k">await</span> graph.<span class="f">getState</span>(config);
 <span class="k">const</span> last = state.values.messages.<span class="f">at</span>(-<span class="n">1</span>);
 last.tool_calls[<span class="n">0</span>].args.query = <span class="s">'Calvin Coolidge age at death'</span>;
 <span class="k">await</span> graph.<span class="f">updateState</span>(config, { messages: [last] });
@@ -410,19 +359,19 @@ last.tool_calls[<span class="n">0</span>].args.query = <span class="s">'Calvin C
 
 <span class="c">// fork：回到历史检查点</span>
 <span class="k">const</span> history = <span class="k">await</span> Array.<span class="f">fromAsync</span>(graph.<span class="f">getStateHistory</span>(config));
-<span class="k">await</span> graph.<span class="f">invoke</span>(<span class="k">null</span>, history[<span class="n">2</span>].config);</code></pre></div>
+<span class="k">await</span> graph.<span class="f">invoke</span>(<span class="k">null</span>, history[<span class="n">2</span>].config);</code></pre>
 </div>
 
-<div class="note">
-  <p class="note__title">仓库里的 ch8 已经重写过</p>
+<div class="box note">
+  <div class="t">&#9432; 仓库里的 ch8 已经重写过</div>
   <p>原书仓库的 <code>ch8/py/*.py</code> 都是 <code>StateGraph()</code> 这样的空壳，跑不起来。现在它们共享一个 <code>ch8/py/agent.py</code>（就是第 6 章「工具太多」那张图），每个文件都是完整可跑的示例。直接 <code>cd ch8/py &amp;&amp; python d-authorize.py</code> 即可。</p>
 </div>
 
 <h2 id="double-texting">技巧四：用户连发两条怎么办</h2>
 
-<p>LLM 慢，所以用户很可能在上一条还没跑完时就又发了一条（发现打错字了、改主意了）。这叫 <span class="kbd-term">double texting</span>，有五种处理策略：</p>
+<p>LLM 慢，所以用户很可能在上一条还没跑完时就又发了一条（发现打错字了、改主意了）。这叫 <span class="term">double texting</span>，有五种处理策略：</p>
 
-<div class="tablewrap">
+<div class="tw">
 <table>
   <thead><tr><th>策略</th><th>做法</th><th>优点</th><th>缺点</th></tr></thead>
   <tbody>
@@ -435,28 +384,27 @@ last.tool_calls[<span class="n">0</span>].args.query = <span class="s">'Calvin C
 </table>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">「打断」的隐藏陷阱</p>
+<div class="box warn">
+  <div class="t">&#9888; 「打断」的隐藏陷阱</div>
   <p>OpenAI 的接口要求：一条请求调用工具的 <code>AIMessage</code> 后面<strong>必须</strong>紧跟对应的 <code>ToolMessage</code>。如果恰好在这中间打断并保留了部分状态，下一次调用会直接被 API 拒绝。所以要么防御性地清理中间状态，要么等当前节点跑完再断。</p>
-  <p style="margin-bottom:0">好消息：这几种策略 LangGraph Platform 已经内置实现（第 9 章的 <code>multitask_strategy</code> 参数），自己部署时才需要手写。</p>
+  <p>好消息：这几种策略 LangGraph Platform 已经内置实现（第 9 章的 <code>multitask_strategy</code> 参数），自己部署时才需要手写。</p>
 </div>
 
 <h2 id="summary">小结</h2>
 
-<div class="grid2">
-  <div class="card"><p class="card__meta">对应目标</p><h4>结构化输出 → 降方差</h4><p>把自由文本变成有 schema 的数据，下游代码才敢用。</p></div>
-  <div class="card"><p class="card__meta">对应目标</p><h4>流式输出 → 抵消延迟</h4><p>不减少总耗时，但把「等待」变成「观看」。</p></div>
-  <div class="card"><p class="card__meta">对应目标</p><h4>人在环路 → 用监督换自主</h4><p>让高自主架构在关键点上重新变得可控。</p></div>
-  <div class="card"><p class="card__meta">对应目标</p><h4>并发策略 → 保证体验一致</h4><p>决定用户抢跑时应用怎么表现，别让它自由发挥。</p></div>
+<div class="cards">
+  <div class="card"><span class="meta">对应目标</span><h4>结构化输出 → 降方差</h4><p>把自由文本变成有 schema 的数据，下游代码才敢用。</p></div>
+  <div class="card"><span class="meta">对应目标</span><h4>流式输出 → 抵消延迟</h4><p>不减少总耗时，但把「等待」变成「观看」。</p></div>
+  <div class="card"><span class="meta">对应目标</span><h4>人在环路 → 用监督换自主</h4><p>让高自主架构在关键点上重新变得可控。</p></div>
+  <div class="card"><span class="meta">对应目标</span><h4>并发策略 → 保证体验一致</h4><p>决定用户抢跑时应用怎么表现，别让它自由发挥。</p></div>
 </div>
 
 <p>功能齐了，下一章把它送上线。</p>
 
-<nav class="pager">
-  <a href="ch07.html"><span class="dir">上一章</span><span class="ttl">07 · Agent 进阶：反思与多智能体</span></a>
-  <a class="next" href="ch09.html"><span class="dir">下一章</span><span class="ttl">09 · 部署：送上生产</span></a>
+<nav class="pager" aria-label="章节翻页">
+<a class="prev" href="ch07.html"><span>&larr; 上一章</span>第 7 章 · 反思与多智能体</a>
+<a class="next" href="ch09.html"><span>下一章 &rarr;</span>第 9 章 · 部署</a>
 </nav>
-</div>
 </main>
 </div>
 <script src="assets/course.js"></script>

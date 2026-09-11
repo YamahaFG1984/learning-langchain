@@ -1,12 +1,10 @@
-<header class="chead">
-  <p class="eyebrow">第 03 章</p>
-  <h1>RAG 下篇：与你的数据对话</h1>
-  <p class="lede">索引建好了，现在的问题变成：用户随口一问，怎么保证捞上来的正好是该捞的？这一章的六个技巧，全都在回答这一个问题。</p>
-</header>
+<span class="chapter-eyebrow">第 3 章</span>
+<h1>RAG 下篇：与你的数据对话</h1>
+<p class="lede">索引建好了，现在的问题变成：用户随口一问，怎么保证捞上来的正好是该捞的？这一章的六个技巧，全都在回答这一个问题。</p>
 
-<div class="note">
-  <p class="note__title">读完这一章你会</p>
-  <ul style="margin-bottom:0">
+<div class="goals">
+  <h4>读完这一章你会</h4>
+  <ul>
     <li>写出一个 20 行的完整 RAG 问答链，并知道每一行在做什么</li>
     <li>用四种查询变换手法（改写 / 多查询 / RAG-Fusion / HyDE）处理「用户问得很烂」</li>
     <li>用逻辑路由和语义路由把问题分发到正确的数据源</li>
@@ -14,66 +12,55 @@
   </ul>
 </div>
 
+<div id="chapter-toc"></div>
+
 <h2 id="basic">RAG 的三个阶段</h2>
 
 <p>把上一章和这一章连起来看，RAG 就三步：<strong>索引（离线）→ 检索（每次提问）→ 生成（每次提问）</strong>。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 760 210" role="img" aria-label="RAG 三阶段：索引把文档存进向量库，检索按问题取回相关块，生成把块塞进提示交给模型" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="c1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <rect x="16" y="24" width="150" height="70" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-dasharray="5 3"/>
-    <text x="91" y="48" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">① 索引</text>
-    <text x="91" y="66" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">第 2 章 · 离线跑一次</text>
-    <text x="91" y="82" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">文档 → 向量库</text>
+<svg class="dgm" viewBox="0 0 760 210" role="img" aria-label="RAG 三阶段：索引把文档存进向量库，检索按问题取回相关块，生成把块塞进提示交给模型">
+    <rect class="bx-d" x="16" y="24" width="150" height="70" rx="6"/>
+    <text class="ttl" x="91" y="48" text-anchor="middle" font-size="11.5">① 索引</text>
+    <text class="lbl" x="91" y="66" text-anchor="middle" font-size="10">第 2 章 · 离线跑一次</text>
+    <text class="lbl" x="91" y="82" text-anchor="middle" font-size="10">文档 → 向量库</text>
 
-    <rect x="16" y="118" width="150" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="91" y="146" text-anchor="middle" font-size="11" fill="currentColor">用户问题</text>
-    <text x="91" y="164" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">"古希腊哲学有谁？"</text>
+    <rect class="bx-b" x="16" y="118" width="150" height="66" rx="6"/>
+    <text x="91" y="146" text-anchor="middle" font-size="11">用户问题</text>
+    <text class="lbl" x="91" y="164" text-anchor="middle" font-size="10">"古希腊哲学有谁？"</text>
 
-    <line x1="170" y1="150" x2="214" y2="150" stroke="currentColor" stroke-width="1.4" marker-end="url(#c1)"/>
+    <line class="ln" x1="170" y1="150" x2="214" y2="150" marker-end="url(#ar)"/>
 
-    <rect x="220" y="100" width="180" height="84" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="310" y="124" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">② 检索</text>
-    <text x="310" y="142" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">问题 → 向量 → 找最近 k 条</text>
-    <text x="310" y="160" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">retriever.invoke(query)</text>
-    <text x="310" y="176" text-anchor="middle" font-size="10" fill="currentColor" opacity=".55">本章大部分内容在优化这一步</text>
-    <line x1="91" y1="98" x2="91" y2="114" stroke="currentColor" stroke-width="1" opacity=".35" stroke-dasharray="3 2"/>
-    <path d="M 166 60 L 310 60 L 310 96" fill="none" stroke="currentColor" stroke-width="1" opacity=".35" stroke-dasharray="3 2" marker-end="url(#c1)"/>
-    <text x="238" y="52" font-size="9.5" fill="currentColor" opacity=".55">查同一个库</text>
+    <rect class="bx-a" x="220" y="100" width="180" height="84" rx="6"/>
+    <text class="ttl on-a" x="310" y="124" text-anchor="middle" font-size="11.5">② 检索</text>
+    <text class="lbl" x="310" y="142" text-anchor="middle" font-size="10">问题 → 向量 → 找最近 k 条</text>
+    <text class="lbl" x="310" y="160" text-anchor="middle" font-size="10">retriever.invoke(query)</text>
+    <text class="sm" x="310" y="176" text-anchor="middle" font-size="10">本章大部分内容在优化这一步</text>
+    <line class="ln-d" x1="91" y1="98" x2="91" y2="114"/>
+    <path class="ln-d" d="M 166 60 L 310 60 L 310 96" marker-end="url(#ar)"/>
+    <text class="sm" x="238" y="52" font-size="9.5">查同一个库</text>
 
-    <line x1="404" y1="142" x2="448" y2="142" stroke="currentColor" stroke-width="1.4" marker-end="url(#c1)"/>
-    <text x="426" y="132" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">k 条</text>
+    <line class="ln" x1="404" y1="142" x2="448" y2="142" marker-end="url(#ar)"/>
+    <text class="sm" x="426" y="132" text-anchor="middle" font-size="9.5">k 条</text>
 
-    <rect x="454" y="100" width="180" height="84" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="544" y="124" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">③ 生成</text>
-    <text x="544" y="142" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">"只根据以下上下文回答："</text>
-    <text x="544" y="158" text-anchor="middle" font-size="10" fill="currentColor" opacity=".7">+ 检索结果 + 原问题</text>
-    <text x="544" y="176" text-anchor="middle" font-size="10" fill="currentColor" opacity=".55">prompt | llm</text>
+    <rect class="bx-a" x="454" y="100" width="180" height="84" rx="6"/>
+    <text class="ttl on-a" x="544" y="124" text-anchor="middle" font-size="11.5">③ 生成</text>
+    <text class="lbl" x="544" y="142" text-anchor="middle" font-size="10">"只根据以下上下文回答："</text>
+    <text class="lbl" x="544" y="158" text-anchor="middle" font-size="10">+ 检索结果 + 原问题</text>
+    <text class="sm" x="544" y="176" text-anchor="middle" font-size="10">prompt | llm</text>
 
-    <line x1="638" y1="142" x2="682" y2="142" stroke="currentColor" stroke-width="1.4" marker-end="url(#c1)"/>
-    <rect x="688" y="124" width="60" height="36" rx="6" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <text x="718" y="146" text-anchor="middle" font-size="10.5" fill="currentColor">答案</text>
+    <line class="ln" x1="638" y1="142" x2="682" y2="142" marker-end="url(#ar)"/>
+    <rect class="bx-g" x="688" y="124" width="60" height="36" rx="6"/>
+    <text x="718" y="146" text-anchor="middle" font-size="10.5">答案</text>
   </svg>
-  </div>
-  <figcaption>「检索」和「生成」每次提问都跑；这一章几乎所有技巧都作用在检索这一格。</figcaption>
+<figcaption>「检索」和「生成」每次提问都跑；这一章几乎所有技巧都作用在检索这一格。</figcaption>
 </figure>
 
 <p>最小可用版本长这样。注意 <code>@chain</code> / <code>RunnableLambda</code> 把三步封成一个函数——这个「把多步打包成一个可调用单元」的习惯，在后面每一章都会用到。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/a-basic-rag</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">from</span> langchain_core.prompts <span class="k">import</span> ChatPromptTemplate
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/a-basic-rag</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_core.prompts <span class="k">import</span> ChatPromptTemplate
 <span class="k">from</span> langchain_core.runnables <span class="k">import</span> chain
 <span class="k">from</span> langchain_openai <span class="k">import</span> ChatOpenAI
 
@@ -97,8 +84,8 @@ llm = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</sp
     <span class="k">return</span> llm.<span class="f">invoke</span>(formatted)                            <span class="c"># ③ 生成</span>
 
 
-<span class="f">print</span>(qa.<span class="f">invoke</span>(<span class="s">"古希腊哲学史上的关键人物有哪些？"</span>).content)</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { ChatPromptTemplate } <span class="k">from</span> <span class="s">'@langchain/core/prompts'</span>;
+<span class="f">print</span>(qa.<span class="f">invoke</span>(<span class="s">"古希腊哲学史上的关键人物有哪些？"</span>).content)</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { ChatPromptTemplate } <span class="k">from</span> <span class="s">'@langchain/core/prompts'</span>;
 <span class="k">import</span> { RunnableLambda } <span class="k">from</span> <span class="s">'@langchain/core/runnables'</span>;
 <span class="k">import</span> { ChatOpenAI } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
 
@@ -119,11 +106,11 @@ llm = <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</sp
   <span class="k">return</span> <span class="k">await</span> llm.<span class="f">invoke</span>(formatted);
 });
 
-console.<span class="f">log</span>((<span class="k">await</span> qa.<span class="f">invoke</span>(<span class="s">'古希腊哲学史上的关键人物有哪些？'</span>)).content);</code></pre></div>
+console.<span class="f">log</span>((<span class="k">await</span> qa.<span class="f">invoke</span>(<span class="s">'古希腊哲学史上的关键人物有哪些？'</span>)).content);</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更</div>
   <p>书里用的 <code>retriever.get_relevant_documents(q)</code> 已废弃，统一改成 <code>retriever.invoke(q)</code>（所有组件同一个接口，见第 1 章）。<code>ChatOpenAI(model_name=…)</code> 也统一成 <code>model=</code>。</p>
 </div>
 
@@ -131,76 +118,63 @@ console.<span class="f">log</span>((<span class="k">await</span> qa.<span class=
 
 <p>基础 RAG 有个隐含假设：<strong>用户的问题本身就是一个好的检索查询。</strong>现实里不是。试试这个：</p>
 
-<div class="shellblock">
-  <div class="codegroup__bar"><span class="codegroup__file">一个被噪声淹没的问题</span></div>
+<div class="code">
+  <div class="bar"><span class="tag">一个被噪声淹没的问题</span></div>
 <pre><code>"今天我起床刷了牙，然后坐下看新闻。结果忘了锅上还煮着东西。
  古希腊哲学史上有哪些关键人物？"
 
 → 基础 RAG 的回答：Based on the given context, there is no information provided.</code></pre>
 </div>
 
-<p>检索器把整段话（包括刷牙和煮饭）一起嵌入了，向量被噪声带偏。解法统称<span class="kbd-term">查询变换</span>：<strong>先把用户的问题改造成更适合检索的形式，再去检索。</strong>四种手法按「抽象程度」排列：</p>
+<p>检索器把整段话（包括刷牙和煮饭）一起嵌入了，向量被噪声带偏。解法统称<span class="term">查询变换</span>：<strong>先把用户的问题改造成更适合检索的形式，再去检索。</strong>四种手法按「抽象程度」排列：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 740 240" role="img" aria-label="四种查询变换手法沿抽象程度轴排列：改写更具体，多查询和 RAG-Fusion 横向扩展，HyDE 生成假想文档更抽象" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="c2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <line x1="40" y1="196" x2="700" y2="196" stroke="currentColor" stroke-width="1.2" marker-end="url(#c2)"/>
-    <text x="40" y="220" font-size="10.5" fill="currentColor" opacity=".6">更具体 / 更聚焦</text>
-    <text x="700" y="220" text-anchor="end" font-size="10.5" fill="currentColor" opacity=".6">更抽象 / 更发散</text>
+<svg class="dgm" viewBox="0 0 740 240" role="img" aria-label="四种查询变换手法沿抽象程度轴排列：改写更具体，多查询和 RAG-Fusion 横向扩展，HyDE 生成假想文档更抽象">
+    <line class="ln" x1="40" y1="196" x2="700" y2="196" marker-end="url(#ar)"/>
+    <text class="sm" x="40" y="220" font-size="10.5">更具体 / 更聚焦</text>
+    <text class="sm" x="700" y="220" text-anchor="end" font-size="10.5">更抽象 / 更发散</text>
 
-    <line x1="120" y1="188" x2="120" y2="204" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="46" y="112" width="148" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="120" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Rewrite</text>
-    <text x="120" y="151" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">让 LLM 重写成</text>
-    <text x="120" y="166" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">干净的检索词</text>
-    <text x="120" y="98" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".55">1 条查询</text>
+    <line class="ln" x1="120" y1="188" x2="120" y2="204"/>
+    <rect class="bx" x="46" y="112" width="148" height="66" rx="6"/>
+    <text class="ttl" x="120" y="134" text-anchor="middle" font-size="11">Rewrite</text>
+    <text class="lbl" x="120" y="151" text-anchor="middle" font-size="9.5">让 LLM 重写成</text>
+    <text class="lbl" x="120" y="166" text-anchor="middle" font-size="9.5">干净的检索词</text>
+    <text class="sm" x="120" y="98" text-anchor="middle" font-size="9.5">1 条查询</text>
 
-    <line x1="300" y1="188" x2="300" y2="204" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="226" y="112" width="148" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="300" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">Multi-Query</text>
-    <text x="300" y="151" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">生成 5 个不同角度</text>
-    <text x="300" y="166" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">结果取并集去重</text>
-    <text x="300" y="98" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".55">N 条查询 · 并集</text>
+    <line class="ln" x1="300" y1="188" x2="300" y2="204"/>
+    <rect class="bx" x="226" y="112" width="148" height="66" rx="6"/>
+    <text class="ttl" x="300" y="134" text-anchor="middle" font-size="11">Multi-Query</text>
+    <text class="lbl" x="300" y="151" text-anchor="middle" font-size="9.5">生成 5 个不同角度</text>
+    <text class="lbl" x="300" y="166" text-anchor="middle" font-size="9.5">结果取并集去重</text>
+    <text class="sm" x="300" y="98" text-anchor="middle" font-size="9.5">N 条查询 · 并集</text>
 
-    <line x1="450" y1="188" x2="450" y2="204" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="376" y="112" width="148" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="450" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">RAG-Fusion</text>
-    <text x="450" y="151" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">同上，但结果用</text>
-    <text x="450" y="166" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">RRF 重新排序</text>
-    <text x="450" y="98" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".55">N 条查询 · 重排</text>
+    <line class="ln" x1="450" y1="188" x2="450" y2="204"/>
+    <rect class="bx" x="376" y="112" width="148" height="66" rx="6"/>
+    <text class="ttl" x="450" y="134" text-anchor="middle" font-size="11">RAG-Fusion</text>
+    <text class="lbl" x="450" y="151" text-anchor="middle" font-size="9.5">同上，但结果用</text>
+    <text class="lbl" x="450" y="166" text-anchor="middle" font-size="9.5">RRF 重新排序</text>
+    <text class="sm" x="450" y="98" text-anchor="middle" font-size="9.5">N 条查询 · 重排</text>
 
-    <line x1="620" y1="188" x2="620" y2="204" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="546" y="112" width="148" height="66" rx="6" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="620" y="134" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">HyDE</text>
-    <text x="620" y="151" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">先编一段假答案，</text>
-    <text x="620" y="166" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".72">拿假答案去检索</text>
-    <text x="620" y="98" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".55">1 段假想文档</text>
+    <line class="ln" x1="620" y1="188" x2="620" y2="204"/>
+    <rect class="bx" x="546" y="112" width="148" height="66" rx="6"/>
+    <text class="ttl" x="620" y="134" text-anchor="middle" font-size="11">HyDE</text>
+    <text class="lbl" x="620" y="151" text-anchor="middle" font-size="9.5">先编一段假答案，</text>
+    <text class="lbl" x="620" y="166" text-anchor="middle" font-size="9.5">拿假答案去检索</text>
+    <text class="sm" x="620" y="98" text-anchor="middle" font-size="9.5">1 段假想文档</text>
 
-    <text x="370" y="44" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">共同点：都要多花一次 LLM 调用，都会增加延迟</text>
-    <text x="370" y="66" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">每个手法都能独立封装成一条 retrieval_chain，随时替换、随时组合</text>
+    <text class="ttl" x="370" y="44" text-anchor="middle" font-size="11.5">共同点：都要多花一次 LLM 调用，都会增加延迟</text>
+    <text class="lbl" x="370" y="66" text-anchor="middle" font-size="10.5">每个手法都能独立封装成一条 retrieval_chain，随时替换、随时组合</text>
   </svg>
-  </div>
-  <figcaption>选哪个取决于失败模式：问题脏 → Rewrite；问题片面 → Multi-Query；候选太杂 → Fusion；问题太短 → HyDE。</figcaption>
+<figcaption>选哪个取决于失败模式：问题脏 → Rewrite；问题片面 → Multi-Query；候选太杂 → Fusion；问题太短 → HyDE。</figcaption>
 </figure>
 
 <h3>Rewrite-Retrieve-Read</h3>
 
 <p>最简单：加一次 LLM 调用，把用户原话改写成一句干净的检索词，用改写后的去检索，但<strong>生成时仍然用原问题</strong>（用户想要的答案是针对原问题的）。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/b-rewrite</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code>rewrite_prompt = ChatPromptTemplate.<span class="f">from_template</span>(
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/b-rewrite</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code>rewrite_prompt = ChatPromptTemplate.<span class="f">from_template</span>(
     <span class="s">"""为下面这个问题写一个更适合搜索引擎的查询词，以 '**' 结尾。
 问题：{x}
 答："""</span>
@@ -217,8 +191,8 @@ rewriter = rewrite_prompt | llm | parse_rewriter_output
     new_query = rewriter.<span class="f">invoke</span>(question)          <span class="c"># ① 改写</span>
     docs = retriever.<span class="f">invoke</span>(new_query)             <span class="c"># ② 用改写后的检索</span>
     formatted = prompt.<span class="f">invoke</span>({<span class="s">"context"</span>: docs, <span class="s">"question"</span>: question})  <span class="c"># ③ 用原问题生成</span>
-    <span class="k">return</span> llm.<span class="f">invoke</span>(formatted)</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">const</span> rewritePrompt = ChatPromptTemplate.<span class="f">fromTemplate</span>(
+    <span class="k">return</span> llm.<span class="f">invoke</span>(formatted)</code></pre>
+<pre data-lang="js"><code><span class="k">const</span> rewritePrompt = ChatPromptTemplate.<span class="f">fromTemplate</span>(
   <span class="s">`为下面这个问题写一个更适合搜索引擎的查询词，以 '**' 结尾。
 问题：{question}
 答：`</span>
@@ -233,22 +207,16 @@ rewriter = rewrite_prompt | llm | parse_rewriter_output
   <span class="k">const</span> docs = <span class="k">await</span> retriever.<span class="f">invoke</span>(newQuery);
   <span class="k">const</span> formatted = <span class="k">await</span> prompt.<span class="f">invoke</span>({ context: docs, question });
   <span class="k">return</span> <span class="k">await</span> llm.<span class="f">invoke</span>(formatted);
-});</code></pre></div>
+});</code></pre>
 </div>
 
 <h3>Multi-Query：一个问题拆成五个</h3>
 
 <p>让 LLM 从不同角度改写出 5 个版本，<strong>并行</strong>检索（这就是 <code>batch</code> 存在的意义），再把结果去重合并。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/c-multi-query</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code>perspectives_prompt = ChatPromptTemplate.<span class="f">from_template</span>(
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/c-multi-query</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code>perspectives_prompt = ChatPromptTemplate.<span class="f">from_template</span>(
     <span class="s">"""你是一个 AI 助手。请针对用户的问题生成 5 个不同角度的版本，
 用来从向量库中检索相关文档。每行一个，不要编号。
 原问题：{question}"""</span>
@@ -266,8 +234,8 @@ query_gen = perspectives_prompt | llm | parse_queries_output
     <span class="k">return</span> <span class="f">list</span>(deduped.<span class="f">values</span>())
 
 <span class="c"># retriever.batch 会并行跑 5 条查询，返回「列表的列表」</span>
-retrieval_chain = query_gen | retriever.batch | get_unique_union</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">const</span> queryGen = perspectivesPrompt
+retrieval_chain = query_gen | retriever.batch | get_unique_union</code></pre>
+<pre data-lang="js"><code><span class="k">const</span> queryGen = perspectivesPrompt
   .<span class="f">pipe</span>(llm)
   .<span class="f">pipe</span>((m) =&gt; String(m.content).<span class="f">split</span>(<span class="s">'\n'</span>));
 
@@ -277,66 +245,53 @@ retrieval_chain = query_gen | retriever.batch | get_unique_union</code></pre></d
     <span class="k">const</span> deduped = {};
     documentLists.<span class="f">flat</span>().<span class="f">forEach</span>((doc) =&gt; { deduped[doc.pageContent] = doc; });
     <span class="k">return</span> Object.<span class="f">values</span>(deduped);
-  });</code></pre></div>
+  });</code></pre>
 </div>
 
 <h3>RAG-Fusion：合并时讲究排序</h3>
 
-<p>Multi-Query 的并集是「无序的一堆」。RAG-Fusion 多做一步 <span class="kbd-term">RRF（倒数排名融合）</span>：一篇文档在多条查询里排名都靠前，就该排到最前面。</p>
+<p>Multi-Query 的并集是「无序的一堆」。RAG-Fusion 多做一步 <span class="term">RRF（倒数排名融合）</span>：一篇文档在多条查询里排名都靠前，就该排到最前面。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 250" role="img" aria-label="RRF 把三条查询各自的排名列表按 1 除以 rank 加 k 累加成融合分数，在多个列表里都靠前的文档得分最高" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="c3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <text x="16" y="20" font-size="11" font-weight="600" fill="currentColor" opacity=".8">三条查询各自的排名结果</text>
+<svg class="dgm" viewBox="0 0 700 250" role="img" aria-label="RRF 把三条查询各自的排名列表按 1 除以 rank 加 k 累加成融合分数，在多个列表里都靠前的文档得分最高">
+    <text class="ttl" x="16" y="20" font-size="11">三条查询各自的排名结果</text>
 
-    <rect x="16" y="32" width="110" height="86" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="71" y="50" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">查询 1</text>
-    <text x="26" y="70" font-size="10.5" fill="currentColor">1. 文档 A</text>
-    <text x="26" y="88" font-size="10.5" fill="currentColor">2. 文档 B</text>
-    <text x="26" y="106" font-size="10.5" fill="currentColor" opacity=".6">3. 文档 C</text>
+    <rect class="bx" x="16" y="32" width="110" height="86" rx="5"/>
+    <text class="sm" x="71" y="50" text-anchor="middle" font-size="9.5">查询 1</text>
+    <text x="26" y="70" font-size="10.5">1. 文档 A</text>
+    <text x="26" y="88" font-size="10.5">2. 文档 B</text>
+    <text class="sm" x="26" y="106" font-size="10.5">3. 文档 C</text>
 
-    <rect x="140" y="32" width="110" height="86" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="195" y="50" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">查询 2</text>
-    <text x="150" y="70" font-size="10.5" fill="currentColor">1. 文档 B</text>
-    <text x="150" y="88" font-size="10.5" fill="currentColor">2. 文档 A</text>
-    <text x="150" y="106" font-size="10.5" fill="currentColor" opacity=".6">3. 文档 D</text>
+    <rect class="bx" x="140" y="32" width="110" height="86" rx="5"/>
+    <text class="sm" x="195" y="50" text-anchor="middle" font-size="9.5">查询 2</text>
+    <text x="150" y="70" font-size="10.5">1. 文档 B</text>
+    <text x="150" y="88" font-size="10.5">2. 文档 A</text>
+    <text class="sm" x="150" y="106" font-size="10.5">3. 文档 D</text>
 
-    <rect x="264" y="32" width="110" height="86" rx="5" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="319" y="50" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">查询 3</text>
-    <text x="274" y="70" font-size="10.5" fill="currentColor">1. 文档 B</text>
-    <text x="274" y="88" font-size="10.5" fill="currentColor" opacity=".6">2. 文档 E</text>
-    <text x="274" y="106" font-size="10.5" fill="currentColor">3. 文档 A</text>
+    <rect class="bx" x="264" y="32" width="110" height="86" rx="5"/>
+    <text class="sm" x="319" y="50" text-anchor="middle" font-size="9.5">查询 3</text>
+    <text x="274" y="70" font-size="10.5">1. 文档 B</text>
+    <text class="sm" x="274" y="88" font-size="10.5">2. 文档 E</text>
+    <text x="274" y="106" font-size="10.5">3. 文档 A</text>
 
-    <line x1="382" y1="75" x2="424" y2="75" stroke="currentColor" stroke-width="1.3" marker-end="url(#c3)"/>
+    <line class="ln" x1="382" y1="75" x2="424" y2="75" marker-end="url(#ar)"/>
 
-    <rect x="430" y="32" width="254" height="86" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="557" y="50" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">融合分数 = Σ 1 / (rank + k)，k=60</text>
-    <text x="442" y="70" font-size="10.5" fill="currentColor">B：1/61 + 1/61 + 1/61 = 0.0492  ①</text>
-    <text x="442" y="88" font-size="10.5" fill="currentColor">A：1/61 + 1/62 + 1/63 = 0.0483  ②</text>
-    <text x="442" y="106" font-size="10.5" fill="currentColor" opacity=".6">C / D / E：只出现一次，分数低</text>
+    <rect class="bx" x="430" y="32" width="254" height="86" rx="5"/>
+    <text class="lbl" x="557" y="50" text-anchor="middle" font-size="9.5">融合分数 = Σ 1 / (rank + k)，k=60</text>
+    <text x="442" y="70" font-size="10.5">B：1/61 + 1/61 + 1/61 = 0.0492  ①</text>
+    <text x="442" y="88" font-size="10.5">A：1/61 + 1/62 + 1/63 = 0.0483  ②</text>
+    <text class="sm" x="442" y="106" font-size="10.5">C / D / E：只出现一次，分数低</text>
 
-    <text x="350" y="160" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">B 从来没拿过任何一条查询的绝对最高相似度，但它「处处靠前」，所以总分第一。</text>
-    <text x="350" y="182" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">k 越大，靠后名次的权重越接近靠前名次 —— 也就是越「民主」。</text>
-    <text x="350" y="212" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".62">这也是 RRF 的核心优势：只用名次，不用分数，天然能融合不同尺度的检索器。</text>
+    <text class="lbl" x="350" y="160" text-anchor="middle" font-size="11">B 从来没拿过任何一条查询的绝对最高相似度，但它「处处靠前」，所以总分第一。</text>
+    <text class="sm" x="350" y="182" text-anchor="middle" font-size="10.5">k 越大，靠后名次的权重越接近靠前名次 —— 也就是越「民主」。</text>
+    <text class="sm" x="350" y="212" text-anchor="middle" font-size="10.5">这也是 RRF 的核心优势：只用名次，不用分数，天然能融合不同尺度的检索器。</text>
   </svg>
-  </div>
-  <figcaption>RRF 只看排名不看分数，所以能把向量检索和关键词检索的结果混在一起排。</figcaption>
+<figcaption>RRF 只看排名不看分数，所以能把向量检索和关键词检索的结果混在一起排。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/d-rag-fusion</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">def</span> <span class="f">reciprocal_rank_fusion</span>(results: <span class="f">list</span>[<span class="f">list</span>], k=<span class="n">60</span>):
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/d-rag-fusion</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">def</span> <span class="f">reciprocal_rank_fusion</span>(results: <span class="f">list</span>[<span class="f">list</span>], k=<span class="n">60</span>):
     fused_scores, documents = {}, {}
     <span class="k">for</span> docs <span class="k">in</span> results:                     <span class="c"># 每条查询的结果列表</span>
         <span class="k">for</span> rank, doc <span class="k">in</span> <span class="f">enumerate</span>(docs):     <span class="c"># rank 就是它在这条列表里的位置</span>
@@ -348,8 +303,8 @@ retrieval_chain = query_gen | retriever.batch | get_unique_union</code></pre></d
     <span class="k">return</span> [documents[key] <span class="k">for</span> key <span class="k">in</span> ordered]
 
 
-retrieval_chain = query_gen | retriever.batch | reciprocal_rank_fusion</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">function</span> <span class="f">reciprocalRankFusion</span>(results, k = <span class="n">60</span>) {
+retrieval_chain = query_gen | retriever.batch | reciprocal_rank_fusion</code></pre>
+<pre data-lang="js"><code><span class="k">function</span> <span class="f">reciprocalRankFusion</span>(results, k = <span class="n">60</span>) {
   <span class="k">const</span> fusedScores = {}, documents = {};
   results.<span class="f">forEach</span>((docs) =&gt; {
     docs.<span class="f">forEach</span>((doc, rank) =&gt; {
@@ -365,11 +320,11 @@ retrieval_chain = query_gen | retriever.batch | reciprocal_rank_fusion</code></p
 
 <span class="k">const</span> retrievalChain = queryGen
   .<span class="f">pipe</span>(retriever.batch.<span class="f">bind</span>(retriever))
-  .<span class="f">pipe</span>(reciprocalRankFusion);</code></pre></div>
+  .<span class="f">pipe</span>(reciprocalRankFusion);</code></pre>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">书里的一个笔误</p>
+<div class="box warn">
+  <div class="t">&#9888; 书里的一个笔误</div>
   <p>原书 JS 版 <code>reciprocalRankFusion</code> 里写的是 <code>documents[key] = 0</code>，应该是 <code>documents[key] = doc</code>，否则最后返回的是一堆 0。仓库里已经修好。</p>
 </div>
 
@@ -377,15 +332,9 @@ retrieval_chain = query_gen | retriever.batch | reciprocal_rank_fusion</code></p
 
 <p>问题通常很短，文档通常很长——两者在向量空间里天然不太像。HyDE 的思路是：<strong>让 LLM 先「幻觉」出一段像模像样的答案，用这段假文档去检索。</strong>假答案的事实可能是错的，但它的<em>用词和文风</em>更接近真文档，检索命中率更高。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/e-hyde</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">from</span> langchain_core.output_parsers <span class="k">import</span> StrOutputParser
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/e-hyde</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_core.output_parsers <span class="k">import</span> StrOutputParser
 
 prompt_hyde = ChatPromptTemplate.<span class="f">from_template</span>(
     <span class="s">"请写一段文字来回答这个问题。\n问题：{question}\n段落："</span>
@@ -394,10 +343,10 @@ prompt_hyde = ChatPromptTemplate.<span class="f">from_template</span>(
 generate_doc = prompt_hyde | <span class="f">ChatOpenAI</span>(model=<span class="s">"gpt-4.1-mini"</span>, temperature=<span class="n">0</span>) | <span class="f">StrOutputParser</span>()
 
 <span class="c"># 假文档 → 检索器（检索器会自动把它嵌入并搜索）</span>
-retrieval_chain = generate_doc | retriever</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">const</span> generateDoc = promptHyde.<span class="f">pipe</span>(llm).<span class="f">pipe</span>((msg) =&gt; msg.content);
+retrieval_chain = generate_doc | retriever</code></pre>
+<pre data-lang="js"><code><span class="k">const</span> generateDoc = promptHyde.<span class="f">pipe</span>(llm).<span class="f">pipe</span>((msg) =&gt; msg.content);
 
-<span class="k">const</span> retrievalChain = generateDoc.<span class="f">pipe</span>(retriever);</code></pre></div>
+<span class="k">const</span> retrievalChain = generateDoc.<span class="f">pipe</span>(retriever);</code></pre>
 </div>
 
 <h2 id="routing">查询路由：该去哪个库找</h2>
@@ -405,64 +354,51 @@ retrieval_chain = generate_doc | retriever</code></pre></div>
 <p>如果你有多个数据源（Python 文档库、JS 文档库、SQL 数据库…），先得决定去哪儿找。两种做法：</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 740 250" role="img" aria-label="逻辑路由让 LLM 用结构化输出选择数据源；语义路由把候选提示词嵌入后与问题做相似度比较，不调用 LLM" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="c4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <text x="16" y="20" font-size="11.5" font-weight="600" fill="currentColor">逻辑路由：让 LLM 选</text>
-    <rect x="16" y="30" width="86" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="59" y="51" text-anchor="middle" font-size="10" fill="currentColor">用户问题</text>
-    <line x1="106" y1="47" x2="140" y2="47" stroke="currentColor" stroke-width="1.2" marker-end="url(#c4)"/>
-    <rect x="146" y="28" width="122" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="207" y="44" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">LLM + schema</text>
-    <text x="207" y="59" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">Literal["python","js"]</text>
-    <line x1="272" y1="40" x2="306" y2="30" stroke="currentColor" stroke-width="1.2" marker-end="url(#c4)"/>
-    <line x1="272" y1="54" x2="306" y2="64" stroke="currentColor" stroke-width="1.2" marker-end="url(#c4)"/>
-    <rect x="312" y="14" width="76" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="350" y="31" text-anchor="middle" font-size="9.5" fill="currentColor">python_docs</text>
-    <rect x="312" y="54" width="76" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="350" y="71" text-anchor="middle" font-size="9.5" fill="currentColor">js_docs</text>
-    <text x="404" y="36" font-size="9.5" fill="currentColor" opacity=".65">✓ 能理解复杂意图</text>
-    <text x="404" y="54" font-size="9.5" fill="currentColor" opacity=".65">✗ 多一次 LLM 调用（慢 + 贵）</text>
-    <text x="404" y="72" font-size="9.5" fill="currentColor" opacity=".65">✓ 结构化输出保证只返回合法选项</text>
+<svg class="dgm" viewBox="0 0 740 250" role="img" aria-label="逻辑路由让 LLM 用结构化输出选择数据源；语义路由把候选提示词嵌入后与问题做相似度比较，不调用 LLM">
+    <text class="ttl" x="16" y="20" font-size="11.5">逻辑路由：让 LLM 选</text>
+    <rect class="bx-b" x="16" y="30" width="86" height="34" rx="5"/>
+    <text x="59" y="51" text-anchor="middle" font-size="10">用户问题</text>
+    <line class="ln" x1="106" y1="47" x2="140" y2="47" marker-end="url(#ar)"/>
+    <rect class="bx" x="146" y="28" width="122" height="38" rx="5"/>
+    <text class="ttl" x="207" y="44" text-anchor="middle" font-size="10">LLM + schema</text>
+    <text class="lbl" x="207" y="59" text-anchor="middle" font-size="9">Literal["python","js"]</text>
+    <line class="ln" x1="272" y1="40" x2="306" y2="30" marker-end="url(#ar)"/>
+    <line class="ln" x1="272" y1="54" x2="306" y2="64" marker-end="url(#ar)"/>
+    <rect class="bx" x="312" y="14" width="76" height="26" rx="4"/>
+    <text x="350" y="31" text-anchor="middle" font-size="9.5">python_docs</text>
+    <rect class="bx" x="312" y="54" width="76" height="26" rx="4"/>
+    <text x="350" y="71" text-anchor="middle" font-size="9.5">js_docs</text>
+    <text class="lbl" x="404" y="36" font-size="9.5">✓ 能理解复杂意图</text>
+    <text class="lbl" x="404" y="54" font-size="9.5">✗ 多一次 LLM 调用（慢 + 贵）</text>
+    <text class="lbl" x="404" y="72" font-size="9.5">✓ 结构化输出保证只返回合法选项</text>
 
-    <line x1="16" y1="106" x2="724" y2="106" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <line class="sep" x1="16" y1="106" x2="724" y2="106"/>
 
-    <text x="16" y="132" font-size="11.5" font-weight="600" fill="currentColor">语义路由：算相似度</text>
-    <rect x="16" y="142" width="86" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="59" y="163" text-anchor="middle" font-size="10" fill="currentColor">用户问题</text>
-    <line x1="106" y1="159" x2="140" y2="159" stroke="currentColor" stroke-width="1.2" marker-end="url(#c4)"/>
-    <rect x="146" y="140" width="122" height="38" rx="5" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="207" y="156" text-anchor="middle" font-size="10" font-weight="600" fill="currentColor">embed + 余弦</text>
-    <text x="207" y="171" text-anchor="middle" font-size="9" fill="currentColor" opacity=".7">与各候选提示词比较</text>
-    <line x1="272" y1="152" x2="306" y2="142" stroke="currentColor" stroke-width="1.2" marker-end="url(#c4)"/>
-    <line x1="272" y1="166" x2="306" y2="176" stroke="currentColor" stroke-width="1.2" marker-end="url(#c4)"/>
-    <rect x="312" y="126" width="76" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="350" y="143" text-anchor="middle" font-size="9.5" fill="currentColor">物理教授提示</text>
-    <rect x="312" y="166" width="76" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="350" y="183" text-anchor="middle" font-size="9.5" fill="currentColor">数学家提示</text>
-    <text x="404" y="148" font-size="9.5" fill="currentColor" opacity=".65">✓ 只需一次嵌入调用，快且便宜</text>
-    <text x="404" y="166" font-size="9.5" fill="currentColor" opacity=".65">✗ 只看「像不像」，不会推理</text>
-    <text x="404" y="184" font-size="9.5" fill="currentColor" opacity=".65">✓ 候选提示词可以随时增删</text>
+    <text class="ttl" x="16" y="132" font-size="11.5">语义路由：算相似度</text>
+    <rect class="bx-b" x="16" y="142" width="86" height="34" rx="5"/>
+    <text x="59" y="163" text-anchor="middle" font-size="10">用户问题</text>
+    <line class="ln" x1="106" y1="159" x2="140" y2="159" marker-end="url(#ar)"/>
+    <rect class="bx" x="146" y="140" width="122" height="38" rx="5"/>
+    <text class="ttl" x="207" y="156" text-anchor="middle" font-size="10">embed + 余弦</text>
+    <text class="lbl" x="207" y="171" text-anchor="middle" font-size="9">与各候选提示词比较</text>
+    <line class="ln" x1="272" y1="152" x2="306" y2="142" marker-end="url(#ar)"/>
+    <line class="ln" x1="272" y1="166" x2="306" y2="176" marker-end="url(#ar)"/>
+    <rect class="bx" x="312" y="126" width="76" height="26" rx="4"/>
+    <text x="350" y="143" text-anchor="middle" font-size="9.5">物理教授提示</text>
+    <rect class="bx" x="312" y="166" width="76" height="26" rx="4"/>
+    <text x="350" y="183" text-anchor="middle" font-size="9.5">数学家提示</text>
+    <text class="lbl" x="404" y="148" font-size="9.5">✓ 只需一次嵌入调用，快且便宜</text>
+    <text class="lbl" x="404" y="166" font-size="9.5">✗ 只看「像不像」，不会推理</text>
+    <text class="lbl" x="404" y="184" font-size="9.5">✓ 候选提示词可以随时增删</text>
 
-    <text x="370" y="228" text-anchor="middle" font-size="10.5" fill="currentColor" opacity=".65">选择依据：路由本身需要推理吗？需要 → 逻辑路由；只是「归类」 → 语义路由。</text>
+    <text class="lbl" x="370" y="228" text-anchor="middle" font-size="10.5">选择依据：路由本身需要推理吗？需要 → 逻辑路由；只是「归类」 → 语义路由。</text>
   </svg>
-  </div>
-  <figcaption>两种路由解决同一个问题，成本和能力不同；语义路由本质上就是对提示词做一次 RAG。</figcaption>
+<figcaption>两种路由解决同一个问题，成本和能力不同；语义路由本质上就是对提示词做一次 RAG。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/f-router（逻辑路由）</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">from</span> typing <span class="k">import</span> Literal
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/f-router（逻辑路由）</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> typing <span class="k">import</span> Literal
 
 <span class="k">from</span> pydantic <span class="k">import</span> BaseModel, Field
 
@@ -492,8 +428,8 @@ result = router.<span class="f">invoke</span>({<span class="s">"question"</span>
     <span class="c"># 注意：不做精确相等比较，而是转小写后做子串匹配——对 LLM 的偶发偏差更宽容</span>
     <span class="k">if</span> <span class="s">"python_docs"</span> <span class="k">in</span> result.datasource.<span class="f">lower</span>():
         <span class="k">return</span> <span class="s">"chain for python_docs"</span>
-    <span class="k">return</span> <span class="s">"chain for js_docs"</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
+    <span class="k">return</span> <span class="s">"chain for js_docs"</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { z } <span class="k">from</span> <span class="s">'zod'</span>;
 
 <span class="k">const</span> routeQuery = z
   .<span class="f">object</span>({
@@ -507,11 +443,11 @@ result = router.<span class="f">invoke</span>({<span class="s">"question"</span>
   .<span class="f">withStructuredOutput</span>(routeQuery, { name: <span class="s">'RouteQuery'</span> });
 
 <span class="k">const</span> router = prompt.<span class="f">pipe</span>(structuredLlm);
-console.<span class="f">log</span>(<span class="k">await</span> router.<span class="f">invoke</span>({ question }));   <span class="c">// { datasource: 'python_docs' }</span></code></pre></div>
+console.<span class="f">log</span>(<span class="k">await</span> router.<span class="f">invoke</span>({ question }));   <span class="c">// { datasource: 'python_docs' }</span></code></pre>
 </div>
 
-<div class="note">
-  <p class="note__title">一条通用原则</p>
+<div class="box tip">
+  <div class="t">&#128161; 一条通用原则</div>
   <p>「对 LLM 输出的随机性保持宽容」贯穿整本书。上面用子串匹配而不是 <code>==</code>，就是一个具体体现。凡是拿 LLM 输出去做程序分支的地方，都值得留一点容错。</p>
 </div>
 
@@ -521,15 +457,9 @@ console.<span class="f">log</span>(<span class="k">await</span> router.<span cla
 
 <h3>文本 → 元数据过滤（SelfQueryRetriever）</h3>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/h-self-query</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="c"># 需要 pip install lark</span>
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/h-self-query</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="c"># 需要 pip install lark</span>
 <span class="k">from</span> langchain_classic.chains.query_constructor.schema <span class="k">import</span> AttributeInfo
 <span class="k">from</span> langchain_classic.retrievers.self_query.base <span class="k">import</span> SelfQueryRetriever
 
@@ -544,8 +474,8 @@ fields = [
 retriever = SelfQueryRetriever.<span class="f">from_llm</span>(llm, vectorstore, <span class="s">"电影剧情简介"</span>, fields)
 
 <span class="f">print</span>(retriever.<span class="f">invoke</span>(<span class="s">"有什么评分高于 8.5 的科幻片？"</span>))
-<span class="c"># LLM 先拆成： query="科幻"  +  filter=and(eq("genre","科幻"), gt("rating", 8.5))</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { SelfQueryRetriever } <span class="k">from</span> <span class="s">'@langchain/classic/retrievers/self_query'</span>;
+<span class="c"># LLM 先拆成： query="科幻"  +  filter=and(eq("genre","科幻"), gt("rating", 8.5))</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { SelfQueryRetriever } <span class="k">from</span> <span class="s">'@langchain/classic/retrievers/self_query'</span>;
 <span class="k">import</span> { AttributeInfo } <span class="k">from</span> <span class="s">'@langchain/classic/chains/query_constructor'</span>;
 <span class="k">import</span> { FunctionalTranslator } <span class="k">from</span> <span class="s">'@langchain/core/structured_query'</span>;
 
@@ -558,11 +488,11 @@ retriever = SelfQueryRetriever.<span class="f">from_llm</span>(llm, vectorstore,
   structuredQueryTranslator: <span class="k">new</span> <span class="f">FunctionalTranslator</span>(),
 });
 
-console.<span class="f">log</span>(<span class="k">await</span> selfQueryRetriever.<span class="f">invoke</span>(<span class="s">'有什么评分高于 8.5 的科幻片？'</span>));</code></pre></div>
+console.<span class="f">log</span>(<span class="k">await</span> selfQueryRetriever.<span class="f">invoke</span>(<span class="s">'有什么评分高于 8.5 的科幻片？'</span>));</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更</div>
   <p><code>langchain.chains.query_constructor.base</code> → <code>langchain_classic.chains.query_constructor.schema</code>；<code>langchain.retrievers.self_query.base</code> → <code>langchain_classic.retrievers.self_query.base</code>。别忘了 <code>pip install lark</code>（解析 LLM 生成的过滤表达式要用）。</p>
 </div>
 
@@ -570,15 +500,9 @@ console.<span class="f">log</span>(<span class="k">await</span> selfQueryRetriev
 
 <p>结构化数据大多在关系型数据库里。让 LLM 写 SQL 有两个提准确率的关键：<strong>把每张表的 <code>CREATE TABLE</code> 语句和几行示例数据放进提示</strong>，以及<strong>给几个「问题 → SQL」的示例</strong>。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch3/{py,js}/i-sql-example</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py"><pre><code><span class="k">from</span> langchain_classic.chains <span class="k">import</span> create_sql_query_chain
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch3/{py,js}/i-sql-example</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_classic.chains <span class="k">import</span> create_sql_query_chain
 <span class="k">from</span> langchain_community.tools <span class="k">import</span> QuerySQLDatabaseTool
 <span class="k">from</span> langchain_community.utilities <span class="k">import</span> SQLDatabase
 
@@ -589,8 +513,8 @@ write_query = <span class="f">create_sql_query_chain</span>(llm, db)   <span cla
 execute_query = <span class="f">QuerySQLDatabaseTool</span>(db=db)      <span class="c"># 执行 SQL</span>
 
 chain = write_query | execute_query
-<span class="f">print</span>(chain.<span class="f">invoke</span>({<span class="s">"question"</span>: <span class="s">"一共有多少员工？"</span>}))</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { createSqlQueryChain } <span class="k">from</span> <span class="s">'@langchain/classic/chains/sql_db'</span>;
+<span class="f">print</span>(chain.<span class="f">invoke</span>({<span class="s">"question"</span>: <span class="s">"一共有多少员工？"</span>}))</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { createSqlQueryChain } <span class="k">from</span> <span class="s">'@langchain/classic/chains/sql_db'</span>;
 <span class="k">import</span> { SqlDatabase } <span class="k">from</span> <span class="s">'@langchain/classic/sql_db'</span>;
 <span class="k">import</span> { QuerySqlTool } <span class="k">from</span> <span class="s">'@langchain/classic/tools/sql'</span>;
 <span class="k">import</span> { DataSource } <span class="k">from</span> <span class="s">'typeorm'</span>;
@@ -601,13 +525,13 @@ chain = write_query | execute_query
 <span class="k">const</span> writeQuery = <span class="k">await</span> <span class="f">createSqlQueryChain</span>({ llm, db, dialect: <span class="s">'sqlite'</span> });
 <span class="k">const</span> executeQuery = <span class="k">new</span> <span class="f">QuerySqlTool</span>(db);
 
-console.<span class="f">log</span>(<span class="k">await</span> writeQuery.<span class="f">pipe</span>(executeQuery).<span class="f">invoke</span>({ question: <span class="s">'一共有多少员工？'</span> }));</code></pre></div>
+console.<span class="f">log</span>(<span class="k">await</span> writeQuery.<span class="f">pipe</span>(executeQuery).<span class="f">invoke</span>({ question: <span class="s">'一共有多少员工？'</span> }));</code></pre>
 </div>
 
-<div class="note note--pit">
-  <p class="note__title">上线之前必须做的三件事</p>
+<div class="box warn">
+  <div class="t">&#9888; 上线之前必须做的三件事</div>
   <p>「让 LLM 生成 SQL 然后直接执行」在生产环境里是<strong>危险操作</strong>。至少要做到：</p>
-  <ol style="margin-bottom:0">
+  <ol>
     <li><strong>只读账号</strong>——数据库用户不具备 <code>INSERT/UPDATE/DELETE/DROP</code> 权限。</li>
     <li><strong>最小表权限</strong>——只授权你确实希望被查询的那几张表。</li>
     <li><strong>查询超时</strong>——防止一条昂贵的查询把数据库拖垮。</li>
@@ -618,7 +542,7 @@ console.<span class="f">log</span>(<span class="k">await</span> writeQuery.<span
 
 <p>这一章的六个技巧看起来五花八门，其实回答的是四个问题：</p>
 
-<div class="tablewrap">
+<div class="tw">
 <table>
   <thead><tr><th>问题</th><th>手法</th><th>代价</th></tr></thead>
   <tbody>

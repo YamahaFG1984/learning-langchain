@@ -21,9 +21,9 @@ xdg-open docs/index.html
 python -m http.server 8000 --directory docs
 ```
 
-页面右上角可以切换 Python / JavaScript 代码，以及亮色 / 暗色主题（选择会记住）。字体走 Google Fonts，离线时自动回退到系统字体。
+左侧栏顶部的开关切换 Python / JavaScript 示例代码，右下角的按钮切换深浅色，选择都会记住。页面只用系统字体、不依赖任何外部资源，离线也能正常显示；窄屏下侧栏收进左上角的菜单按钮。
 
-想改内容的话：正文片段在 `docs/_src/`，页面外壳（导航、翻页、目录）由 `docs/build.py` 统一生成——
+想改内容的话：正文片段在 `docs/_src/`，页面外壳（侧边栏、本章目录、图号、上一章 / 下一章）由 `docs/build.py` 统一生成——
 
 ```bash
 python docs/build.py          # 全部重建

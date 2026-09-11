@@ -1,95 +1,97 @@
-/* Learning LangChain 中文教程 — 共享交互
-   1. 主题切换（跟随系统 / 亮 / 暗，记住选择）
-   2. Python / JavaScript 代码切换（全站统一）
-   3. 右侧目录滚动高亮
-   4. 代码复制
-*/
-(function () {
-  'use strict';
+/* ================================================================
+   Learning LangChain 中文精读 · 共享脚本
+   侧边栏、目录、上一章/下一章都由 build.py 静态生成；这里只负责交互：
+   主题切换、移动端菜单、Python/JavaScript 代码切换、复制按钮。
 
-  var store = {
-    get: function (k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    set: function (k, v) { try { localStorage.setItem(k, v); } catch (e) { /* 隐私模式下忽略 */ } }
+   以普通 <script> 加载而不是 type="module"：浏览器不允许从 file:// 加载
+   模块脚本，而这套页面要能直接双击打开。用块级作用域避免污染全局。
+   ================================================================ */
+{
+  const store = {
+    get: (key) => { try { return localStorage.getItem(key); } catch { return null; } },
+    set: (key, value) => { try { localStorage.setItem(key, value); } catch { /* 隐私模式下忽略 */ } },
+  };
+  const root = document.documentElement;
+  const side = document.getElementById('sidebar');
+
+  const makeButton = (id, label) => {
+    const button = document.createElement('button');
+    button.id = id;
+    button.type = 'button';
+    button.setAttribute('aria-label', label);
+    document.body.append(button);
+    return button;
   };
 
-  /* ---------- 主题 ---------- */
-  var THEME_KEY = 'llc-theme';
-  function applyTheme(t) {
-    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
-    else document.documentElement.removeAttribute('data-theme');
-    var btn = document.getElementById('theme-toggle');
-    if (btn) btn.textContent = t === 'dark' ? '暗色' : t === 'light' ? '亮色' : '跟随系统';
-  }
-  applyTheme(store.get(THEME_KEY) || 'system');
+  /* ---------- 侧边栏：当前章节滚到可见处 ---------- */
+  const active = side?.querySelector('a.ch.active');
+  if (active) side.scrollTop = active.offsetTop - side.clientHeight / 2;
 
-  /* ---------- 语言 ---------- */
-  var LANG_KEY = 'llc-lang';
-  function applyLang(lang) {
-    document.querySelectorAll('.codegroup').forEach(function (group) {
-      var panes = group.querySelectorAll('[data-lang]');
-      var tabs = group.querySelectorAll('.langtab');
-      var available = Array.prototype.map.call(panes, function (p) { return p.dataset.lang; });
-      var pick = available.indexOf(lang) >= 0 ? lang : available[0];
-      panes.forEach(function (p) { p.classList.toggle('is-shown', p.dataset.lang === pick); });
-      tabs.forEach(function (t) { t.setAttribute('aria-selected', String(t.dataset.lang === pick)); });
-    });
-    document.querySelectorAll('[data-lang-btn]').forEach(function (b) {
-      b.setAttribute('aria-pressed', String(b.dataset.langBtn === lang));
-    });
-  }
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var lang = store.get(LANG_KEY) || 'py';
-    applyLang(lang);
-
-    document.addEventListener('click', function (e) {
-      var tab = e.target.closest('.langtab');
-      if (tab) { store.set(LANG_KEY, tab.dataset.lang); applyLang(tab.dataset.lang); return; }
-
-      var langBtn = e.target.closest('[data-lang-btn]');
-      if (langBtn) { store.set(LANG_KEY, langBtn.dataset.langBtn); applyLang(langBtn.dataset.langBtn); return; }
-
-      var themeBtn = e.target.closest('#theme-toggle');
-      if (themeBtn) {
-        var order = ['system', 'light', 'dark'];
-        var cur = store.get(THEME_KEY) || 'system';
-        var next = order[(order.indexOf(cur) + 1) % order.length];
-        store.set(THEME_KEY, next); applyTheme(next);
-        return;
-      }
-
-      var copyBtn = e.target.closest('[data-copy]');
-      if (copyBtn) {
-        var group = copyBtn.closest('.codegroup, .shellblock');
-        var pane = group.querySelector('[data-lang].is-shown pre, pre');
-        if (pane && navigator.clipboard) {
-          navigator.clipboard.writeText(pane.innerText).then(function () {
-            var old = copyBtn.textContent;
-            copyBtn.textContent = '已复制';
-            setTimeout(function () { copyBtn.textContent = old; }, 1400);
-          });
-        }
-      }
-    });
-
-    /* ---------- 目录滚动高亮 ---------- */
-    var links = Array.prototype.slice.call(document.querySelectorAll('.toc a[href^="#"]'));
-    if (!links.length || !('IntersectionObserver' in window)) return;
-    var map = {};
-    var targets = [];
-    links.forEach(function (a) {
-      var el = document.getElementById(a.getAttribute('href').slice(1));
-      if (el) { map[el.id] = a; targets.push(el); }
-    });
-    var visible = new Set();
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (en) {
-        if (en.isIntersecting) visible.add(en.target.id); else visible.delete(en.target.id);
-      });
-      var first = targets.find(function (t) { return visible.has(t.id); });
-      links.forEach(function (a) { a.classList.remove('is-active'); });
-      if (first && map[first.id]) map[first.id].classList.add('is-active');
-    }, { rootMargin: '-72px 0px -70% 0px' });
-    targets.forEach(function (t) { io.observe(t); });
+  /* ---------- 移动端菜单 ---------- */
+  const menuButton = makeButton('menu-btn', '目录');
+  menuButton.textContent = '☰';
+  menuButton.addEventListener('click', () => document.body.classList.toggle('nav-open'));
+  document.addEventListener('click', (event) => {
+    if (!document.body.classList.contains('nav-open') || event.target === menuButton) return;
+    // 点侧栏外面、或点了侧栏里的链接，都收起菜单
+    if (!side.contains(event.target) || event.target.closest('a')) {
+      document.body.classList.remove('nav-open');
+    }
   });
-})();
+
+  /* ---------- 主题切换 ---------- */
+  const THEME_KEY = 'llc-doc-theme';
+  const isDark = () => {
+    const theme = root.dataset.theme;
+    return theme ? theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+  };
+  const themeButton = makeButton('theme-btn', '切换深浅色');
+  const paintThemeButton = () => { themeButton.textContent = isDark() ? '☀' : '☽'; };
+  themeButton.addEventListener('click', () => {
+    const next = isDark() ? 'light' : 'dark';
+    root.dataset.theme = next;
+    store.set(THEME_KEY, next);
+    paintThemeButton();
+  });
+  paintThemeButton();
+
+  /* ---------- Python / JavaScript 代码切换（全站统一） ---------- */
+  const LANG_KEY = 'llc-lang';
+  const applyLang = (lang) => {
+    for (const box of document.querySelectorAll('.code[data-group]')) {
+      const panes = [...box.querySelectorAll('pre[data-lang]')];
+      // 这个代码块没有所选语言时，退回它的第一种
+      const pick = panes.some((pane) => pane.dataset.lang === lang) ? lang : panes[0].dataset.lang;
+      for (const pane of panes) pane.classList.toggle('is-shown', pane.dataset.lang === pick);
+      for (const tab of box.querySelectorAll('.langtab')) {
+        tab.setAttribute('aria-selected', String(tab.dataset.lang === pick));
+      }
+    }
+    for (const button of document.querySelectorAll('[data-lang-btn]')) {
+      button.setAttribute('aria-pressed', String(button.dataset.langBtn === lang));
+    }
+  };
+  applyLang(store.get(LANG_KEY) ?? 'py');
+
+  document.addEventListener('click', (event) => {
+    const picker = event.target.closest('.langtab, [data-lang-btn]');
+    if (picker) {
+      const lang = picker.dataset.lang ?? picker.dataset.langBtn;
+      // 切换会改变代码块高度；把被点的元素钉在原来的屏幕位置，页面不跳
+      const before = picker.getBoundingClientRect().top;
+      store.set(LANG_KEY, lang);
+      applyLang(lang);
+      if (!side.contains(picker)) scrollBy(0, picker.getBoundingClientRect().top - before);
+      return;
+    }
+
+    const copyButton = event.target.closest('.copy');
+    if (copyButton) {
+      const box = copyButton.closest('.code');
+      const pre = box.querySelector('pre.is-shown') ?? box.querySelector('pre');
+      navigator.clipboard?.writeText(pre.innerText);
+      copyButton.textContent = '已复制';
+      setTimeout(() => { copyButton.textContent = '复制'; }, 1400);
+    }
+  });
+}

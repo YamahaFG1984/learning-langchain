@@ -1,72 +1,47 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>RAG 上篇：为你的数据建索引｜Learning LangChain 中文教程</title>
-<meta name="description" content="加载、切分、嵌入、入库——让模型能查到你的私有资料。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Newsreader:opsz,wght@6..72,500;6..72,600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600&display=swap">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>第 2 章 · RAG 上篇：为你的数据建索引 — Learning LangChain 中文精读</title>
+<meta name="description" content="嵌入到底是什么；加载、切分、入库，以及索引优化三招">
+<script>try{const t=localStorage.getItem('llc-doc-theme');if(t)document.documentElement.dataset.theme=t}catch{}</script>
 <link rel="stylesheet" href="assets/course.css">
 </head>
-<body>
-<div class="shell">
-<aside class="rail">
-  <a class="brand" href="index.html">
-    <span class="brand__mark">Learning LangChain</span>
-    <span class="brand__name">中文精读教程</span>
-    <span class="brand__sub">11 章 · 图解 + 可运行代码</span>
-  </a>
-  <div>
-    <h3>章节</h3>
-    <nav class="chapnav">
-    <a href="ch01.html"><span class="num">01</span><span>LLM 基础与 LangChain 构建块</span></a>
-    <a href="ch02.html" aria-current="page"><span class="num">02</span><span>RAG 上篇：为你的数据建索引</span></a>
-    <a href="ch03.html"><span class="num">03</span><span>RAG 下篇：与你的数据对话</span></a>
-    <a href="ch04.html"><span class="num">04</span><span>用 LangGraph 给机器人加记忆</span></a>
-    <a href="ch05.html"><span class="num">05</span><span>LangGraph 认知架构</span></a>
-    <a href="ch06.html"><span class="num">06</span><span>Agent 架构</span></a>
-    <a href="ch07.html"><span class="num">07</span><span>Agent 进阶：反思与多智能体</span></a>
-    <a href="ch08.html"><span class="num">08</span><span>榨干 LLM 的实用模式</span></a>
-    <a href="ch09.html"><span class="num">09</span><span>部署：送上生产</span></a>
-    <a href="ch10.html"><span class="num">10</span><span>测试：评估、监控与改进</span></a>
-    <a href="ch11.html"><span class="num">11</span><span>用 LLM 做产品</span></a>
-    </nav>
-  </div>
-  <div>
-    <h3>本章目录</h3>
-    <nav class="toc">
-      <a href="#why">为什么要做这一切</a>
-      <a href="#embedding">嵌入到底是什么</a>
-      <a href="#load">第一步：加载成文本</a>
-      <a href="#split">第二步：切分</a>
-      <a href="#embed-store">第三、四步：嵌入并入库</a>
-      <a href="#record-manager">文档更新了怎么办：索引 API</a>
-      <a href="#optimize">索引优化：朴素切分不够用的三种情况</a>
-      <a href="#summary">小结</a>
-    </nav>
-  </div>
+<body data-chapter="2">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--fg-faint)"/></marker>
+<marker id="ar-a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" style="fill:var(--accent)"/></marker>
+</defs></svg>
+<div id="app">
+<aside id="sidebar">
+<a class="brand" href="index.html"><span class="mark" aria-hidden="true">&#129436;</span><span>LangChain 中文精读<small>《Learning LangChain》图解教程</small></span></a>
+<div class="langswitch" role="group" aria-label="示例代码语言"><span>代码</span><button type="button" data-lang-btn="py" aria-pressed="true">Python</button><button type="button" data-lang-btn="js" aria-pressed="false">JavaScript</button></div>
+<div class="part">第一部分 · 知识</div>
+<a class="ch" href="ch01.html"><span class="n">1</span><span>LLM 基础与构建块</span></a>
+<a class="ch active" aria-current="page" href="ch02.html"><span class="n">2</span><span>RAG 上篇：建索引</span></a>
+<a class="ch" href="ch03.html"><span class="n">3</span><span>RAG 下篇：对话</span></a>
+<div class="part">第二部分 · 记忆</div>
+<a class="ch" href="ch04.html"><span class="n">4</span><span>加记忆</span></a>
+<div class="part">第三部分 · 行动</div>
+<a class="ch" href="ch05.html"><span class="n">5</span><span>认知架构</span></a>
+<a class="ch" href="ch06.html"><span class="n">6</span><span>Agent 架构</span></a>
+<a class="ch" href="ch07.html"><span class="n">7</span><span>反思与多智能体</span></a>
+<div class="part">第四部分 · 可信</div>
+<a class="ch" href="ch08.html"><span class="n">8</span><span>实用模式</span></a>
+<a class="ch" href="ch09.html"><span class="n">9</span><span>部署</span></a>
+<a class="ch" href="ch10.html"><span class="n">10</span><span>测试与评估</span></a>
+<div class="part">第五部分 · 产品</div>
+<a class="ch" href="ch11.html"><span class="n">11</span><span>用 LLM 做产品</span></a>
 </aside>
-<main class="main">
-<div class="wrap">
-  <div class="topbar">
-    <span class="crumb">第 02 章</span>
-    <div class="tools">
-      <button class="chip" data-lang-btn="py" aria-pressed="true">Python</button>
-      <button class="chip" data-lang-btn="js" aria-pressed="false">JavaScript</button>
-      <button class="chip" id="theme-toggle" type="button">跟随系统</button>
-    </div>
-  </div>
-<header class="chead">
-  <p class="eyebrow">第 02 章</p>
-  <h1>RAG 上篇：为你的数据建索引</h1>
-  <p class="lede">模型不知道你公司的年报，也不知道上周发生了什么。解决办法不是「重新训练」，而是在提问时把相关资料一起递过去。这一章做的就是前半段：把资料变成能被快速检索的形式。</p>
-</header>
+<main>
+<span class="chapter-eyebrow">第 2 章</span>
+<h1>RAG 上篇：为你的数据建索引</h1>
+<p class="lede">模型不知道你公司的年报，也不知道上周发生了什么。解决办法不是「重新训练」，而是在提问时把相关资料一起递过去。这一章做的就是前半段：把资料变成能被快速检索的形式。</p>
 
-<div class="note">
-  <p class="note__title">读完这一章你会</p>
-  <ul style="margin-bottom:0">
+<div class="goals">
+  <h4>读完这一章你会</h4>
+  <ul>
     <li>用自己的话解释「嵌入」和「余弦相似度」，而不只是会调 API</li>
     <li>把 txt / 网页 / PDF 加载进来，切成大小合适、语义完整的块</li>
     <li>用 PGVector 存取向量，并用索引 API 处理「文档更新了怎么办」</li>
@@ -74,64 +49,71 @@
   </ul>
 </div>
 
+<nav class="toc" aria-label="本章目录">
+  <div class="h">本章目录</div>
+  <ol>
+    <li><a href="#why">为什么要做这一切</a></li>
+    <li><a href="#embedding">嵌入到底是什么</a></li>
+    <li><a href="#load">第一步：加载成文本</a></li>
+    <li><a href="#split">第二步：切分</a></li>
+    <li><a href="#embed-store">第三、四步：嵌入并入库</a></li>
+    <li><a href="#record-manager">文档更新了怎么办：索引 API</a></li>
+    <li><a href="#optimize">索引优化：朴素切分不够用的三种情况</a></li>
+    <li><a href="#summary">小结</a></li>
+  </ol>
+</nav>
+
 <h2 id="why">为什么要做这一切</h2>
 
 <p>LLM 有两个绕不过去的知识盲区：<strong>私有数据</strong>（本来就不在训练集里）和<strong>知识截止</strong>（训练完之后的事它不知道）。碰到这两类问题，模型不会说「我不知道」，它会一本正经地编——这就是幻觉。</p>
 
-<p>最直接的修法：提问时把相关段落贴在问题旁边。但你不可能把整份 500 页年报贴进去（上下文窗口装不下，也贵），所以需要一套<strong>「按问题找出最相关的几段」</strong>的机制。这套机制的准备工作就叫<span class="kbd-term">索引（indexing）</span>，也叫摄取（ingestion）。</p>
+<p>最直接的修法：提问时把相关段落贴在问题旁边。但你不可能把整份 500 页年报贴进去（上下文窗口装不下，也贵），所以需要一套<strong>「按问题找出最相关的几段」</strong>的机制。这套机制的准备工作就叫<span class="term">索引（indexing）</span>，也叫摄取（ingestion）。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 800 250" role="img" aria-label="索引四步流水线：加载成文本、切分成块、转成向量、存入向量库；提问时用同一个嵌入模型把问题转成向量再做相似度检索" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="b1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <text x="16" y="22" font-size="11" font-weight="600" fill="currentColor" opacity=".7">索引阶段（离线做一次）</text>
+<svg class="dgm" viewBox="0 0 800 250" role="img" aria-label="索引四步流水线：加载成文本、切分成块、转成向量、存入向量库；提问时用同一个嵌入模型把问题转成向量再做相似度检索">
+    <text class="ttl" x="16" y="22" font-size="11">索引阶段（离线做一次）</text>
 
-    <rect x="16" y="36" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="76" y="60" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">① 加载</text>
-    <text x="76" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">PDF/网页 → Document</text>
+    <rect class="bx" x="16" y="36" width="120" height="56" rx="6"/>
+    <text class="ttl" x="76" y="60" text-anchor="middle" font-size="11.5">① 加载</text>
+    <text class="lbl" x="76" y="78" text-anchor="middle" font-size="10">PDF/网页 → Document</text>
 
-    <rect x="182" y="36" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="242" y="60" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">② 切分</text>
-    <text x="242" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">1000 字一块，带重叠</text>
+    <rect class="bx" x="182" y="36" width="120" height="56" rx="6"/>
+    <text class="ttl" x="242" y="60" text-anchor="middle" font-size="11.5">② 切分</text>
+    <text class="lbl" x="242" y="78" text-anchor="middle" font-size="10">1000 字一块，带重叠</text>
 
-    <rect x="348" y="36" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="408" y="60" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">③ 嵌入</text>
-    <text x="408" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">文本 → 一串浮点数</text>
+    <rect class="bx" x="348" y="36" width="120" height="56" rx="6"/>
+    <text class="ttl" x="408" y="60" text-anchor="middle" font-size="11.5">③ 嵌入</text>
+    <text class="lbl" x="408" y="78" text-anchor="middle" font-size="10">文本 → 一串浮点数</text>
 
-    <rect x="514" y="36" width="120" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="574" y="60" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">④ 入库</text>
-    <text x="574" y="78" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">向量 + 原文 + 元数据</text>
+    <rect class="bx" x="514" y="36" width="120" height="56" rx="6"/>
+    <text class="ttl" x="574" y="60" text-anchor="middle" font-size="11.5">④ 入库</text>
+    <text class="lbl" x="574" y="78" text-anchor="middle" font-size="10">向量 + 原文 + 元数据</text>
 
-    <line x1="140" y1="64" x2="178" y2="64" stroke="currentColor" stroke-width="1.3" marker-end="url(#b1)"/>
-    <line x1="306" y1="64" x2="344" y2="64" stroke="currentColor" stroke-width="1.3" marker-end="url(#b1)"/>
-    <line x1="472" y1="64" x2="510" y2="64" stroke="currentColor" stroke-width="1.3" marker-end="url(#b1)"/>
+    <line class="ln" x1="140" y1="64" x2="178" y2="64" marker-end="url(#ar)"/>
+    <line class="ln" x1="306" y1="64" x2="344" y2="64" marker-end="url(#ar)"/>
+    <line class="ln" x1="472" y1="64" x2="510" y2="64" marker-end="url(#ar)"/>
 
-    <rect x="660" y="30" width="124" height="150" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="722" y="52" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">向量库</text>
-    <line x1="676" y1="62" x2="768" y2="62" stroke="currentColor" stroke-width="1" opacity=".3"/>
-    <text x="722" y="80" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">[0.02, -0.13, …] 原文</text>
-    <text x="722" y="96" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">[0.41,  0.07, …] 原文</text>
-    <text x="722" y="112" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".6">[-0.3,  0.22, …] 原文</text>
-    <text x="722" y="128" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".45">…</text>
-    <line x1="638" y1="64" x2="656" y2="64" stroke="currentColor" stroke-width="1.3" marker-end="url(#b1)"/>
+    <rect class="bx-p" x="660" y="30" width="124" height="150" rx="6"/>
+    <text class="ttl on-p" x="722" y="52" text-anchor="middle" font-size="11.5">向量库</text>
+    <line class="sep" x1="676" y1="62" x2="768" y2="62"/>
+    <text class="sm" x="722" y="80" text-anchor="middle" font-size="9.5">[0.02, -0.13, …] 原文</text>
+    <text class="sm" x="722" y="96" text-anchor="middle" font-size="9.5">[0.41,  0.07, …] 原文</text>
+    <text class="sm" x="722" y="112" text-anchor="middle" font-size="9.5">[-0.3,  0.22, …] 原文</text>
+    <text class="sm" x="722" y="128" text-anchor="middle" font-size="9.5">…</text>
+    <line class="ln" x1="638" y1="64" x2="656" y2="64" marker-end="url(#ar)"/>
 
-    <line x1="16" y1="200" x2="784" y2="200" stroke="currentColor" stroke-width="1" opacity=".18"/>
-    <text x="16" y="224" font-size="11" font-weight="600" fill="currentColor" opacity=".7">检索阶段（每次提问）</text>
-    <rect x="182" y="206" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="242" y="228" text-anchor="middle" font-size="10.5" fill="currentColor">用户问题</text>
-    <line x1="306" y1="223" x2="344" y2="223" stroke="currentColor" stroke-width="1.2" marker-end="url(#b1)"/>
-    <rect x="348" y="206" width="120" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <text x="408" y="228" text-anchor="middle" font-size="10.5" fill="currentColor">同一个嵌入模型</text>
-    <line x1="472" y1="223" x2="656" y2="223" stroke="currentColor" stroke-width="1.2" marker-end="url(#b1)"/>
-    <text x="564" y="216" text-anchor="middle" font-size="10" fill="currentColor" opacity=".65">找最近的 k 条</text>
-    <line x1="722" y1="196" x2="722" y2="182" stroke="currentColor" stroke-width="1.2" marker-end="url(#b1)"/>
+    <line class="sep" x1="16" y1="200" x2="784" y2="200"/>
+    <text class="ttl" x="16" y="224" font-size="11">检索阶段（每次提问）</text>
+    <rect class="bx-b" x="182" y="206" width="120" height="34" rx="5"/>
+    <text x="242" y="228" text-anchor="middle" font-size="10.5">用户问题</text>
+    <line class="ln" x1="306" y1="223" x2="344" y2="223" marker-end="url(#ar)"/>
+    <rect class="bx" x="348" y="206" width="120" height="34" rx="5"/>
+    <text x="408" y="228" text-anchor="middle" font-size="10.5">同一个嵌入模型</text>
+    <line class="ln" x1="472" y1="223" x2="656" y2="223" marker-end="url(#ar)"/>
+    <text class="lbl" x="564" y="216" text-anchor="middle" font-size="10">找最近的 k 条</text>
+    <line class="ln" x1="722" y1="196" x2="722" y2="182" marker-end="url(#ar)"/>
   </svg>
-  </div>
-  <figcaption>③ 用的嵌入模型必须和检索时用的是同一个——不同模型产生的向量不可比较。</figcaption>
+<figcaption><span class="fig-n">图 2-1</span>③ 用的嵌入模型必须和检索时用的是同一个——不同模型产生的向量不可比较。</figcaption>
 </figure>
 
 <h2 id="embedding">嵌入到底是什么</h2>
@@ -142,7 +124,7 @@
 
 <p>LLM 之前就有嵌入。最朴素的做法是把所有出现过的词列成一张表，每句话按词频计数：</p>
 
-<div class="tablewrap">
+<div class="tw">
 <table>
   <thead><tr><th>词</th><th>What a sunny day.</th><th>Such bright skies today.</th><th>I haven't seen a sunny day in weeks.</th></tr></thead>
   <tbody>
@@ -161,49 +143,42 @@
 <p>现代嵌入模型输出的是几百到几千个浮点数，每一维都不为 0（所以叫「稠密」）。关键性质是：<strong>意思相近的文本，向量在空间里也靠得近。</strong></p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 260" role="img" aria-label="语义空间示意：pet 和 dog 的向量夹角小、余弦相似度高；lion 的向量夹角大、相似度低" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="b2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <line x1="60" y1="220" x2="330" y2="220" stroke="currentColor" stroke-width="1" opacity=".3" marker-end="url(#b2)"/>
-    <line x1="60" y1="220" x2="60" y2="30" stroke="currentColor" stroke-width="1" opacity=".3" marker-end="url(#b2)"/>
-    <text x="336" y="224" font-size="10" fill="currentColor" opacity=".5">维度 1</text>
-    <text x="54" y="24" font-size="10" fill="currentColor" opacity=".5" text-anchor="end">维度 2</text>
+<svg class="dgm" viewBox="0 0 700 260" role="img" aria-label="语义空间示意：pet 和 dog 的向量夹角小、余弦相似度高；lion 的向量夹角大、相似度低">
+    <line class="ln" x1="60" y1="220" x2="330" y2="220" marker-end="url(#ar)"/>
+    <line class="ln" x1="60" y1="220" x2="60" y2="30" marker-end="url(#ar)"/>
+    <text class="sm" x="336" y="224" font-size="10">维度 1</text>
+    <text class="sm" x="54" y="24" font-size="10" text-anchor="end">维度 2</text>
 
-    <line x1="60" y1="220" x2="250" y2="70" stroke="currentColor" stroke-width="1.8" marker-end="url(#b2)"/>
-    <text x="256" y="66" font-size="11.5" font-weight="600" fill="currentColor">dog</text>
-    <line x1="60" y1="220" x2="278" y2="94" stroke="currentColor" stroke-width="1.8" marker-end="url(#b2)"/>
-    <text x="284" y="92" font-size="11.5" font-weight="600" fill="currentColor">pet</text>
-    <line x1="60" y1="220" x2="300" y2="196" stroke="currentColor" stroke-width="1.4" opacity=".55" marker-end="url(#b2)"/>
-    <text x="306" y="198" font-size="11.5" fill="currentColor" opacity=".7">lion</text>
+    <line class="ln-a" x1="60" y1="220" x2="250" y2="70" marker-end="url(#ar-a)"/>
+    <text class="ttl" x="256" y="66" font-size="11.5">dog</text>
+    <line class="ln-a" x1="60" y1="220" x2="278" y2="94" marker-end="url(#ar-a)"/>
+    <text class="ttl" x="284" y="92" font-size="11.5">pet</text>
+    <line class="ln" x1="60" y1="220" x2="300" y2="196" marker-end="url(#ar)"/>
+    <text class="lbl" x="306" y="198" font-size="11.5">lion</text>
 
-    <path d="M 158 145 A 60 60 0 0 1 172 158" fill="none" stroke="currentColor" stroke-width="1.4"/>
-    <text x="190" y="140" font-size="10" fill="currentColor" opacity=".8">小夹角</text>
+    <path class="ln" d="M 158 145 A 60 60 0 0 1 172 158"/>
+    <text class="lbl" x="190" y="140" font-size="10">小夹角</text>
 
-    <path d="M 130 175 A 90 90 0 0 0 148 208" fill="none" stroke="currentColor" stroke-width="1" opacity=".5"/>
-    <text x="132" y="200" font-size="10" fill="currentColor" opacity=".55">大夹角</text>
+    <path class="ln" d="M 130 175 A 90 90 0 0 0 148 208"/>
+    <text class="sm" x="132" y="200" font-size="10">大夹角</text>
 
-    <line x1="380" y1="30" x2="380" y2="230" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <line class="sep" x1="380" y1="30" x2="380" y2="230"/>
 
-    <text x="410" y="52" font-size="12" font-weight="600" fill="currentColor">余弦相似度</text>
-    <text x="410" y="76" font-size="11" fill="currentColor" opacity=".8">看两个向量的夹角，不看长度。</text>
-    <rect x="410" y="92" width="260" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <text x="540" y="112" text-anchor="middle" font-size="11" fill="currentColor">cos(pet, dog) ≈ 0.75</text>
-    <rect x="410" y="130" width="260" height="30" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".55"/>
-    <text x="540" y="150" text-anchor="middle" font-size="11" fill="currentColor" opacity=".8">cos(pet, lion) ≈ 0.10</text>
-    <text x="410" y="184" font-size="10.5" fill="currentColor" opacity=".7">范围 −1 到 1：</text>
-    <text x="410" y="202" font-size="10.5" fill="currentColor" opacity=".7">1 = 几乎同义 · 0 = 无关 · −1 = 相反</text>
-    <text x="410" y="226" font-size="10.5" fill="currentColor" opacity=".55">检索 = 找出与问题向量夹角最小的 k 条</text>
+    <text class="ttl" x="410" y="52" font-size="12">余弦相似度</text>
+    <text class="lbl" x="410" y="76" font-size="11">看两个向量的夹角，不看长度。</text>
+    <rect class="bx" x="410" y="92" width="260" height="30" rx="5"/>
+    <text x="540" y="112" text-anchor="middle" font-size="11">cos(pet, dog) ≈ 0.75</text>
+    <rect class="bx" x="410" y="130" width="260" height="30" rx="5"/>
+    <text class="lbl" x="540" y="150" text-anchor="middle" font-size="11">cos(pet, lion) ≈ 0.10</text>
+    <text class="lbl" x="410" y="184" font-size="10.5">范围 −1 到 1：</text>
+    <text class="lbl" x="410" y="202" font-size="10.5">1 = 几乎同义 · 0 = 无关 · −1 = 相反</text>
+    <text class="sm" x="410" y="226" font-size="10.5">检索 = 找出与问题向量夹角最小的 k 条</text>
   </svg>
-  </div>
-  <figcaption>图里画的是二维，实际是 1536 维之类；直觉是一样的：<strong>近 = 意思像</strong>。</figcaption>
+<figcaption><span class="fig-n">图 2-2</span>图里画的是二维，实际是 1536 维之类；直觉是一样的：<strong>近 = 意思像</strong>。</figcaption>
 </figure>
 
-<div class="note">
-  <p class="note__title">嵌入还能干什么</p>
+<div class="box key">
+  <div class="t">&#9733; 嵌入还能干什么</div>
   <p>除了搜索，同一个向量还能做<strong>聚类</strong>（自动发现主题）、<strong>分类</strong>（归入已知标签）、<strong>推荐</strong>（找相似文档）、<strong>异常检测</strong>（找离群的）。第 3 章的语义路由、第 6 章的工具检索，用的都是这个能力。</p>
 </div>
 
@@ -211,15 +186,9 @@
 
 <p>Document Loader 的用法都一样：选加载器 → 传参数（路径/URL）→ <code>load()</code>。返回的是 <code>Document</code> 列表，每个有 <code>page_content</code>（正文）和 <code>metadata</code>（来源、页码等）。</p>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch2/{py,js}/a-text-loader · b-web-loader · c-pdf-loader</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_community.document_loaders <span class="k">import</span> TextLoader, WebBaseLoader, PyPDFLoader
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch2/{py,js}/a-text-loader · b-web-loader · c-pdf-loader</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_community.document_loaders <span class="k">import</span> TextLoader, WebBaseLoader, PyPDFLoader
 
 <span class="c"># 纯文本</span>
 docs = <span class="f">TextLoader</span>(<span class="s">"./test.txt"</span>, encoding=<span class="s">"utf-8"</span>).<span class="f">load</span>()
@@ -231,8 +200,8 @@ docs = <span class="f">WebBaseLoader</span>(<span class="s">"https://www.langcha
 pages = <span class="f">PyPDFLoader</span>(<span class="s">"./test.pdf"</span>).<span class="f">load</span>()
 
 <span class="f">print</span>(pages[<span class="n">0</span>].page_content[:<span class="n">200</span>])
-<span class="f">print</span>(pages[<span class="n">0</span>].metadata)   <span class="c"># {'source': './test.pdf', 'page': 0, ...}</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { TextLoader } <span class="k">from</span> <span class="s">'@langchain/classic/document_loaders/fs/text'</span>;
+<span class="f">print</span>(pages[<span class="n">0</span>].metadata)   <span class="c"># {'source': './test.pdf', 'page': 0, ...}</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { TextLoader } <span class="k">from</span> <span class="s">'@langchain/classic/document_loaders/fs/text'</span>;
 <span class="k">import</span> { CheerioWebBaseLoader } <span class="k">from</span> <span class="s">'@langchain/community/document_loaders/web/cheerio'</span>;
 <span class="k">import</span> { PDFLoader } <span class="k">from</span> <span class="s">'@langchain/community/document_loaders/fs/pdf'</span>;
 
@@ -240,11 +209,11 @@ pages = <span class="f">PyPDFLoader</span>(<span class="s">"./test.pdf"</span>).
 <span class="k">const</span> web  = <span class="k">await</span> <span class="k">new</span> <span class="f">CheerioWebBaseLoader</span>(<span class="s">'https://www.langchain.com/'</span>).<span class="f">load</span>();
 <span class="k">const</span> pdf  = <span class="k">await</span> <span class="k">new</span> <span class="f">PDFLoader</span>(<span class="s">'./test.pdf'</span>).<span class="f">load</span>();
 
-console.<span class="f">log</span>(pdf[<span class="n">0</span>].pageContent.<span class="f">slice</span>(<span class="n">0</span>, <span class="n">200</span>), pdf[<span class="n">0</span>].metadata);</code></pre></div>
+console.<span class="f">log</span>(pdf[<span class="n">0</span>].pageContent.<span class="f">slice</span>(<span class="n">0</span>, <span class="n">200</span>), pdf[<span class="n">0</span>].metadata);</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更（JS）</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更（JS）</div>
   <p>JS 里 <code>langchain/document_loaders/*</code> 这些深层子路径在 v1 已经不再从主包导出，全部搬到了 <code>@langchain/classic/*</code>。<code>PDFLoader</code> 则在 <code>@langchain/community</code>。</p>
 </div>
 
@@ -255,53 +224,45 @@ console.<span class="f">log</span>(pdf[<span class="n">0</span>].pageContent.<sp
 <p><code>RecursiveCharacterTextSplitter</code> 的策略很聪明：<strong>按重要性从高到低依次尝试分隔符</strong>——先按段落 <code>\n\n</code> 切，还太长就按行 <code>\n</code> 切，再不行按空格切。这样能最大限度沿着文本的自然结构下刀。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 720 240" role="img" aria-label="递归切分先按段落切，过长的段落再按行切；相邻块之间保留重叠区域以保住跨块语义" xmlns="http://www.w3.org/2000/svg">
-    <text x="16" y="22" font-size="11.5" font-weight="600" fill="currentColor">递归尝试分隔符</text>
-    <rect x="16" y="32" width="290" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.2"/>
-    <text x="161" y="49" text-anchor="middle" font-size="10.5" fill="currentColor">一整篇文档（120 000 字符）</text>
-    <line x1="161" y1="60" x2="161" y2="74" stroke="currentColor" stroke-width="1" opacity=".4"/>
-    <text x="176" y="72" font-size="9.5" fill="currentColor" opacity=".6">① 按 \n\n 段落切</text>
-    <rect x="16" y="76" width="84" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="58" y="92" text-anchor="middle" font-size="10" fill="currentColor">段落 ✓</text>
-    <rect x="108" y="76" width="106" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.1" stroke-dasharray="4 3"/>
-    <text x="161" y="92" text-anchor="middle" font-size="10" fill="currentColor">段落 仍 &gt; 1000</text>
-    <rect x="222" y="76" width="84" height="24" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="264" y="92" text-anchor="middle" font-size="10" fill="currentColor">段落 ✓</text>
-    <line x1="161" y1="102" x2="161" y2="116" stroke="currentColor" stroke-width="1" opacity=".4"/>
-    <text x="176" y="114" font-size="9.5" fill="currentColor" opacity=".6">② 按 \n 行切</text>
-    <rect x="116" y="118" width="42" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <rect x="164" y="118" width="42" height="22" rx="4" fill="none" stroke="currentColor" stroke-width="1.1"/>
-    <text x="212" y="134" font-size="9.5" fill="currentColor" opacity=".6">③ 还不行，按空格切</text>
+<svg class="dgm" viewBox="0 0 720 240" role="img" aria-label="递归切分先按段落切，过长的段落再按行切；相邻块之间保留重叠区域以保住跨块语义">
+    <text class="ttl" x="16" y="22" font-size="11.5">递归尝试分隔符</text>
+    <rect class="bx" x="16" y="32" width="290" height="26" rx="4"/>
+    <text x="161" y="49" text-anchor="middle" font-size="10.5">一整篇文档（120 000 字符）</text>
+    <line class="sep" x1="161" y1="60" x2="161" y2="74"/>
+    <text class="sm" x="176" y="72" font-size="9.5">① 按 \n\n 段落切</text>
+    <rect class="bx" x="16" y="76" width="84" height="24" rx="4"/>
+    <text x="58" y="92" text-anchor="middle" font-size="10">段落 ✓</text>
+    <rect class="bx-d" x="108" y="76" width="106" height="24" rx="4"/>
+    <text x="161" y="92" text-anchor="middle" font-size="10">段落 仍 &gt; 1000</text>
+    <rect class="bx" x="222" y="76" width="84" height="24" rx="4"/>
+    <text x="264" y="92" text-anchor="middle" font-size="10">段落 ✓</text>
+    <line class="sep" x1="161" y1="102" x2="161" y2="116"/>
+    <text class="sm" x="176" y="114" font-size="9.5">② 按 \n 行切</text>
+    <rect class="bx" x="116" y="118" width="42" height="22" rx="4"/>
+    <rect class="bx" x="164" y="118" width="42" height="22" rx="4"/>
+    <text class="sm" x="212" y="134" font-size="9.5">③ 还不行，按空格切</text>
 
-    <line x1="330" y1="20" x2="330" y2="220" stroke="currentColor" stroke-width="1" opacity=".2"/>
+    <line class="sep" x1="330" y1="20" x2="330" y2="220"/>
 
-    <text x="356" y="22" font-size="11.5" font-weight="600" fill="currentColor">chunk_overlap 做什么</text>
-    <rect x="356" y="40" width="180" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="446" y="57" text-anchor="middle" font-size="10" fill="currentColor">块 A（1000 字符）</text>
-    <rect x="500" y="76" width="180" height="26" rx="4" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="590" y="93" text-anchor="middle" font-size="10" fill="currentColor">块 B（1000 字符）</text>
-    <rect x="500" y="40" width="36" height="26" rx="0" fill="currentColor" opacity=".18"/>
-    <rect x="500" y="76" width="36" height="26" rx="0" fill="currentColor" opacity=".18"/>
-    <text x="518" y="122" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".75">重叠 200</text>
-    <text x="356" y="150" font-size="10.5" fill="currentColor" opacity=".75">重叠的作用：一个完整句子刚好横跨切点时，</text>
-    <text x="356" y="167" font-size="10.5" fill="currentColor" opacity=".75">至少有一个块里它是完整的。</text>
-    <text x="356" y="192" font-size="10.5" fill="currentColor" opacity=".75">代码 / Markdown 结构性强，</text>
-    <text x="356" y="209" font-size="10.5" fill="currentColor" opacity=".75">通常 <tspan font-family="monospace">chunk_overlap=0</tspan> 就够。</text>
+    <text class="ttl" x="356" y="22" font-size="11.5">chunk_overlap 做什么</text>
+    <rect class="bx" x="356" y="40" width="180" height="26" rx="4"/>
+    <text x="446" y="57" text-anchor="middle" font-size="10">块 A（1000 字符）</text>
+    <rect class="bx" x="500" y="76" width="180" height="26" rx="4"/>
+    <text x="590" y="93" text-anchor="middle" font-size="10">块 B（1000 字符）</text>
+    <rect class="fl" x="500" y="40" width="36" height="26" rx="0"/>
+    <rect class="fl" x="500" y="76" width="36" height="26" rx="0"/>
+    <text class="lbl" x="518" y="122" text-anchor="middle" font-size="9.5">重叠 200</text>
+    <text class="lbl" x="356" y="150" font-size="10.5">重叠的作用：一个完整句子刚好横跨切点时，</text>
+    <text class="lbl" x="356" y="167" font-size="10.5">至少有一个块里它是完整的。</text>
+    <text class="lbl" x="356" y="192" font-size="10.5">代码 / Markdown 结构性强，</text>
+    <text class="lbl" x="356" y="209" font-size="10.5">通常 <tspan class="mono">chunk_overlap=0</tspan> 就够。</text>
   </svg>
-  </div>
-  <figcaption>先按语义边界切，再用重叠兜底——两个机制解决的是同一个问题的两个方向。</figcaption>
+<figcaption><span class="fig-n">图 2-3</span>先按语义边界切，再用重叠兜底——两个机制解决的是同一个问题的两个方向。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch2/{py,js}/d-rec-text-splitter · e-rec-text-splitter-code</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_text_splitters <span class="k">import</span> Language, RecursiveCharacterTextSplitter
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch2/{py,js}/d-rec-text-splitter · e-rec-text-splitter-code</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_text_splitters <span class="k">import</span> Language, RecursiveCharacterTextSplitter
 
 splitter = <span class="f">RecursiveCharacterTextSplitter</span>(chunk_size=<span class="n">1000</span>, chunk_overlap=<span class="n">200</span>)
 chunks = splitter.<span class="f">split_documents</span>(docs)          <span class="c"># 输入 Document 列表</span>
@@ -310,8 +271,8 @@ chunks = splitter.<span class="f">split_documents</span>(docs)          <span cl
 py_splitter = RecursiveCharacterTextSplitter.<span class="f">from_language</span>(
     language=Language.PYTHON, chunk_size=<span class="n">50</span>, chunk_overlap=<span class="n">0</span>
 )
-py_docs = py_splitter.<span class="f">create_documents</span>([PYTHON_CODE])  <span class="c"># 输入字符串列表</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { RecursiveCharacterTextSplitter } <span class="k">from</span> <span class="s">'@langchain/textsplitters'</span>;
+py_docs = py_splitter.<span class="f">create_documents</span>([PYTHON_CODE])  <span class="c"># 输入字符串列表</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { RecursiveCharacterTextSplitter } <span class="k">from</span> <span class="s">'@langchain/textsplitters'</span>;
 
 <span class="k">const</span> splitter = <span class="k">new</span> <span class="f">RecursiveCharacterTextSplitter</span>({ chunkSize: <span class="n">1000</span>, chunkOverlap: <span class="n">200</span> });
 <span class="k">const</span> chunks = <span class="k">await</span> splitter.<span class="f">splitDocuments</span>(docs);
@@ -320,11 +281,11 @@ py_docs = py_splitter.<span class="f">create_documents</span>([PYTHON_CODE])  <s
   chunkSize: <span class="n">50</span>,
   chunkOverlap: <span class="n">0</span>,
 });
-<span class="k">const</span> pyDocs = <span class="k">await</span> pySplitter.<span class="f">createDocuments</span>([PYTHON_CODE]);</code></pre></div>
+<span class="k">const</span> pyDocs = <span class="k">await</span> pySplitter.<span class="f">createDocuments</span>([PYTHON_CODE]);</code></pre>
 </div>
 
-<div class="note">
-  <p class="note__title"><code>split_documents</code> vs <code>create_documents</code></p>
+<div class="box note">
+  <div class="t">&#9432; <code>split_documents</code> vs <code>create_documents</code></div>
   <p>前者吃 <code>Document</code> 列表（来自加载器），元数据自动继承；后者吃字符串列表，可以用第二个参数手动传每条的元数据。搞混了会报类型错误。</p>
 </div>
 
@@ -334,23 +295,17 @@ py_docs = py_splitter.<span class="f">create_documents</span>([PYTHON_CODE])  <s
 
 <p>存的地方叫向量库。本书用 PGVector——它是 Postgres 的一个扩展，好处是你不用多维护一个数据库，业务表和向量表在同一个 Postgres 里。</p>
 
-<div class="shellblock">
-  <div class="codegroup__bar"><span class="codegroup__file">先起一个带 pgvector 的 Postgres</span><span class="spacer"></span><button class="chip" data-copy type="button">复制</button></div>
+<div class="code">
+  <div class="bar"><span class="tag">先起一个带 pgvector 的 Postgres</span><button class="copy" type="button">复制</button></div>
 <pre><code>docker run --name pgvector-container \
   -e POSTGRES_USER=langchain -e POSTGRES_PASSWORD=langchain \
   -e POSTGRES_DB=langchain -p 6024:5432 \
   -d pgvector/pgvector:pg16</code></pre>
 </div>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch2/{py,js}/i-pg-vector</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">import</span> uuid
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch2/{py,js}/i-pg-vector</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">import</span> uuid
 
 <span class="k">from</span> langchain_community.document_loaders <span class="k">import</span> TextLoader
 <span class="k">from</span> langchain_core.documents <span class="k">import</span> Document
@@ -381,8 +336,8 @@ db.<span class="f">add_documents</span>([
              metadata={<span class="s">"location"</span>: <span class="s">"pond"</span>, <span class="s">"topic"</span>: <span class="s">"animals"</span>}),
 ], ids=ids)
 
-db.<span class="f">delete</span>(ids=[ids[<span class="n">1</span>]])</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { TextLoader } <span class="k">from</span> <span class="s">'@langchain/classic/document_loaders/fs/text'</span>;
+db.<span class="f">delete</span>(ids=[ids[<span class="n">1</span>]])</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { TextLoader } <span class="k">from</span> <span class="s">'@langchain/classic/document_loaders/fs/text'</span>;
 <span class="k">import</span> { RecursiveCharacterTextSplitter } <span class="k">from</span> <span class="s">'@langchain/textsplitters'</span>;
 <span class="k">import</span> { OpenAIEmbeddings } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
 <span class="k">import</span> { PGVectorStore } <span class="k">from</span> <span class="s">'@langchain/community/vectorstores/pgvector'</span>;
@@ -398,64 +353,51 @@ db.<span class="f">delete</span>(ids=[ids[<span class="n">1</span>]])</code></pr
   postgresConnectionOptions: { connectionString },
 });
 
-console.<span class="f">log</span>(<span class="k">await</span> db.<span class="f">similaritySearch</span>(<span class="s">'古希腊哲学的关键人物有谁'</span>, <span class="n">4</span>));</code></pre></div>
+console.<span class="f">log</span>(<span class="k">await</span> db.<span class="f">similaritySearch</span>(<span class="s">'古希腊哲学的关键人物有谁'</span>, <span class="n">4</span>));</code></pre>
 </div>
 
 <h2 id="record-manager">文档更新了怎么办：索引 API</h2>
 
 <p>真实场景里数据会变。天真的做法是「全部删掉重建」——但重新计算嵌入是要花钱花时间的，而且期间检索会断。</p>
 
-<p>LangChain 的索引 API 用一个 <span class="kbd-term">RecordManager</span> 记住每条文档的<strong>内容哈希 + 写入时间 + 来源 ID</strong>。再次索引时，它对比哈希：没变的跳过，变了的写新版并删旧版。</p>
+<p>LangChain 的索引 API 用一个 <span class="term">RecordManager</span> 记住每条文档的<strong>内容哈希 + 写入时间 + 来源 ID</strong>。再次索引时，它对比哈希：没变的跳过，变了的写新版并删旧版。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 220" role="img" aria-label="RecordManager 对比内容哈希决定跳过、更新还是删除，避免重复计算嵌入" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="b3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <rect x="16" y="70" width="120" height="52" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="76" y="92" text-anchor="middle" font-size="11" fill="currentColor">本次要索引的</text>
-    <text x="76" y="109" text-anchor="middle" font-size="11" fill="currentColor">文档列表</text>
+<svg class="dgm" viewBox="0 0 700 220" role="img" aria-label="RecordManager 对比内容哈希决定跳过、更新还是删除，避免重复计算嵌入">
+    <rect class="bx-b" x="16" y="70" width="120" height="52" rx="6"/>
+    <text x="76" y="92" text-anchor="middle" font-size="11">本次要索引的</text>
+    <text x="76" y="109" text-anchor="middle" font-size="11">文档列表</text>
 
-    <line x1="140" y1="96" x2="188" y2="96" stroke="currentColor" stroke-width="1.3" marker-end="url(#b3)"/>
+    <line class="ln" x1="140" y1="96" x2="188" y2="96" marker-end="url(#ar)"/>
 
-    <rect x="194" y="56" width="150" height="80" rx="6" fill="none" stroke="currentColor" stroke-width="1.8"/>
-    <text x="269" y="80" text-anchor="middle" font-size="11.5" font-weight="600" fill="currentColor">RecordManager</text>
-    <text x="269" y="100" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">记录：内容哈希</text>
-    <text x="269" y="115" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">写入时间 · source ID</text>
+    <rect class="bx-p" x="194" y="56" width="150" height="80" rx="6"/>
+    <text class="ttl on-p" x="269" y="80" text-anchor="middle" font-size="11.5">RecordManager</text>
+    <text class="lbl" x="269" y="100" text-anchor="middle" font-size="9.5">记录：内容哈希</text>
+    <text class="lbl" x="269" y="115" text-anchor="middle" font-size="9.5">写入时间 · source ID</text>
 
-    <line x1="348" y1="82" x2="404" y2="60" stroke="currentColor" stroke-width="1.2" marker-end="url(#b3)"/>
-    <line x1="348" y1="96" x2="404" y2="96" stroke="currentColor" stroke-width="1.2" marker-end="url(#b3)"/>
-    <line x1="348" y1="110" x2="404" y2="132" stroke="currentColor" stroke-width="1.2" marker-end="url(#b3)"/>
+    <line class="ln" x1="348" y1="82" x2="404" y2="60" marker-end="url(#ar)"/>
+    <line class="ln" x1="348" y1="96" x2="404" y2="96" marker-end="url(#ar)"/>
+    <line class="ln" x1="348" y1="110" x2="404" y2="132" marker-end="url(#ar)"/>
 
-    <rect x="410" y="42" width="130" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".65"/>
-    <text x="475" y="63" text-anchor="middle" font-size="10.5" fill="currentColor">哈希相同 → 跳过</text>
-    <rect x="410" y="80" width="130" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.5"/>
-    <text x="475" y="101" text-anchor="middle" font-size="10.5" fill="currentColor">哈希变了 → 重写</text>
-    <rect x="410" y="118" width="130" height="34" rx="5" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".65"/>
-    <text x="475" y="139" text-anchor="middle" font-size="10.5" fill="currentColor">源已消失 → 删除</text>
+    <rect class="bx" x="410" y="42" width="130" height="34" rx="5"/>
+    <text x="475" y="63" text-anchor="middle" font-size="10.5">哈希相同 → 跳过</text>
+    <rect class="bx" x="410" y="80" width="130" height="34" rx="5"/>
+    <text x="475" y="101" text-anchor="middle" font-size="10.5">哈希变了 → 重写</text>
+    <rect class="bx" x="410" y="118" width="130" height="34" rx="5"/>
+    <text x="475" y="139" text-anchor="middle" font-size="10.5">源已消失 → 删除</text>
 
-    <line x1="544" y1="96" x2="590" y2="96" stroke="currentColor" stroke-width="1.3" marker-end="url(#b3)"/>
-    <rect x="596" y="66" width="88" height="60" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="640" y="100" text-anchor="middle" font-size="11" fill="currentColor">向量库</text>
+    <line class="ln" x1="544" y1="96" x2="590" y2="96" marker-end="url(#ar)"/>
+    <rect class="bx-p" x="596" y="66" width="88" height="60" rx="6"/>
+    <text x="640" y="100" text-anchor="middle" font-size="11">向量库</text>
 
-    <text x="350" y="188" text-anchor="middle" font-size="11" fill="currentColor" opacity=".7">cleanup 模式：<tspan font-family="monospace">None</tspan> 不清理 · <tspan font-family="monospace">incremental</tspan> 替换同源旧版 · <tspan font-family="monospace">full</tspan> 额外删除本次没提到的</text>
+    <text class="lbl" x="350" y="188" text-anchor="middle" font-size="11">cleanup 模式：<tspan class="mono">None</tspan> 不清理 · <tspan class="mono">incremental</tspan> 替换同源旧版 · <tspan class="mono">full</tspan> 额外删除本次没提到的</text>
   </svg>
-  </div>
-  <figcaption>第二次跑同样的文档，输出会是 <code>num_skipped: 2</code> 而不是重新写一遍。</figcaption>
+<figcaption><span class="fig-n">图 2-4</span>第二次跑同样的文档，输出会是 <code>num_skipped: 2</code> 而不是重新写一遍。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch2/{py,js}/j-record-manager</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">from</span> langchain_classic.indexes <span class="k">import</span> SQLRecordManager, index
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch2/{py,js}/j-record-manager</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">from</span> langchain_classic.indexes <span class="k">import</span> SQLRecordManager, index
 <span class="k">from</span> langchain_core.documents <span class="k">import</span> Document
 <span class="k">from</span> langchain_openai <span class="k">import</span> OpenAIEmbeddings
 <span class="k">from</span> langchain_postgres.vectorstores <span class="k">import</span> PGVector
@@ -485,8 +427,8 @@ docs = [
 docs[<span class="n">0</span>].page_content = <span class="s">"I just modified this document!"</span>
 <span class="f">print</span>(<span class="f">index</span>(docs, record_manager, vectorstore,
             cleanup=<span class="s">"incremental"</span>, source_id_key=<span class="s">"source"</span>))
-<span class="c"># {'num_added': 1, ..., 'num_deleted': 1}   ← 旧版被清掉</span></code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> { PostgresRecordManager } <span class="k">from</span> <span class="s">'@langchain/community/indexes/postgres'</span>;
+<span class="c"># {'num_added': 1, ..., 'num_deleted': 1}   ← 旧版被清掉</span></code></pre>
+<pre data-lang="js"><code><span class="k">import</span> { PostgresRecordManager } <span class="k">from</span> <span class="s">'@langchain/community/indexes/postgres'</span>;
 <span class="k">import</span> { index } <span class="k">from</span> <span class="s">'@langchain/classic/indexes'</span>;
 <span class="k">import</span> { OpenAIEmbeddings } <span class="k">from</span> <span class="s">'@langchain/openai'</span>;
 <span class="k">import</span> { PGVectorStore } <span class="k">from</span> <span class="s">'@langchain/community/vectorstores/pgvector'</span>;
@@ -507,11 +449,11 @@ docs[<span class="n">0</span>].page_content = <span class="s">"I just modified t
 console.<span class="f">log</span>(<span class="k">await</span> <span class="f">index</span>({
   docsSource: docs, recordManager, vectorStore,
   options: { cleanup: <span class="s">'incremental'</span>, sourceIdKey: <span class="s">'source'</span> },
-}));</code></pre></div>
+}));</code></pre>
 </div>
 
-<div class="note note--v1">
-  <p class="note__title">1.x 变更</p>
+<div class="box deep">
+  <div class="t">&#8635; 1.x 变更</div>
   <p>Python：<code>langchain.indexes</code> → <code>langchain_classic.indexes</code>；<code>langchain.docstore.document.Document</code> → <code>langchain_core.documents.Document</code>。<br>JS：<code>langchain/indexes</code> → <code>@langchain/classic/indexes</code>。</p>
 </div>
 
@@ -524,59 +466,46 @@ console.<span class="f">log</span>(<span class="k">await</span> <span class="f">
 <p>关键洞察：<strong>适合被搜到的文本，和适合喂给模型的文本，不一定相同。</strong>一张财务表格直接嵌入，语义信号很弱（全是数字），但它的一段文字摘要语义很清晰。那就<strong>嵌入摘要、返回原表</strong>。</p>
 
 <figure>
-  <div class="figframe">
-  <svg viewBox="0 0 700 250" role="img" aria-label="MultiVectorRetriever 把摘要放进向量库用于检索，原始大块放进文档库用于回答，两者用 doc_id 关联" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <marker id="b4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-        <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
-      </marker>
-    </defs>
-    <rect x="16" y="98" width="104" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.3"/>
-    <text x="68" y="118" text-anchor="middle" font-size="10.5" fill="currentColor">原始大块</text>
-    <text x="68" y="134" text-anchor="middle" font-size="10.5" fill="currentColor">（含表格）</text>
+<svg class="dgm" viewBox="0 0 700 250" role="img" aria-label="MultiVectorRetriever 把摘要放进向量库用于检索，原始大块放进文档库用于回答，两者用 doc_id 关联">
+    <rect class="bx-b" x="16" y="98" width="104" height="48" rx="6"/>
+    <text x="68" y="118" text-anchor="middle" font-size="10.5">原始大块</text>
+    <text x="68" y="134" text-anchor="middle" font-size="10.5">（含表格）</text>
 
-    <line x1="124" y1="112" x2="168" y2="66" stroke="currentColor" stroke-width="1.2" marker-end="url(#b4)"/>
-    <text x="130" y="80" font-size="9.5" fill="currentColor" opacity=".7">LLM 摘要</text>
-    <line x1="124" y1="132" x2="168" y2="178" stroke="currentColor" stroke-width="1.2" marker-end="url(#b4)"/>
-    <text x="130" y="176" font-size="9.5" fill="currentColor" opacity=".7">原样存</text>
+    <line class="ln" x1="124" y1="112" x2="168" y2="66" marker-end="url(#ar)"/>
+    <text class="lbl" x="130" y="80" font-size="9.5">LLM 摘要</text>
+    <line class="ln" x1="124" y1="132" x2="168" y2="178" marker-end="url(#ar)"/>
+    <text class="lbl" x="130" y="176" font-size="9.5">原样存</text>
 
-    <rect x="174" y="38" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="249" y="60" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">向量库</text>
-    <text x="249" y="78" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">摘要 + doc_id</text>
+    <rect class="bx-p" x="174" y="38" width="150" height="56" rx="6"/>
+    <text class="ttl on-p" x="249" y="60" text-anchor="middle" font-size="11">向量库</text>
+    <text class="lbl" x="249" y="78" text-anchor="middle" font-size="9.5">摘要 + doc_id</text>
 
-    <rect x="174" y="152" width="150" height="56" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="249" y="174" text-anchor="middle" font-size="11" font-weight="600" fill="currentColor">文档库 docstore</text>
-    <text x="249" y="192" text-anchor="middle" font-size="9.5" fill="currentColor" opacity=".7">doc_id → 原始大块</text>
+    <rect class="bx-p" x="174" y="152" width="150" height="56" rx="6"/>
+    <text class="ttl on-p" x="249" y="174" text-anchor="middle" font-size="11">文档库 docstore</text>
+    <text class="lbl" x="249" y="192" text-anchor="middle" font-size="9.5">doc_id → 原始大块</text>
 
-    <line x1="249" y1="98" x2="249" y2="148" stroke="currentColor" stroke-width="1" stroke-dasharray="4 3" opacity=".6"/>
-    <text x="256" y="128" font-size="9.5" fill="currentColor" opacity=".6">doc_id 关联</text>
+    <line class="ln-d" x1="249" y1="98" x2="249" y2="148"/>
+    <text class="sm" x="256" y="128" font-size="9.5">doc_id 关联</text>
 
-    <rect x="380" y="98" width="110" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".7"/>
-    <text x="435" y="127" text-anchor="middle" font-size="10.5" fill="currentColor">用户问题</text>
+    <rect class="bx-b" x="380" y="98" width="110" height="48" rx="6"/>
+    <text x="435" y="127" text-anchor="middle" font-size="10.5">用户问题</text>
 
-    <path d="M 380 112 L 340 80 L 328 70" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#b4)"/>
-    <text x="336" y="104" font-size="9.5" fill="currentColor" opacity=".75">① 搜摘要</text>
-    <path d="M 249 212 L 249 226 L 500 226 L 500 148" fill="none" stroke="currentColor" stroke-width="1.3" marker-end="url(#b4)"/>
-    <text x="360" y="240" font-size="9.5" fill="currentColor" opacity=".75">② 按 doc_id 取回完整原文</text>
+    <path class="ln" d="M 380 112 L 340 80 L 328 70" marker-end="url(#ar)"/>
+    <text class="lbl" x="336" y="104" font-size="9.5">① 搜摘要</text>
+    <path class="ln" d="M 249 212 L 249 226 L 500 226 L 500 148" marker-end="url(#ar)"/>
+    <text class="lbl" x="360" y="240" font-size="9.5">② 按 doc_id 取回完整原文</text>
 
-    <rect x="546" y="98" width="138" height="48" rx="6" fill="none" stroke="currentColor" stroke-width="1.6"/>
-    <text x="615" y="118" text-anchor="middle" font-size="10.5" fill="currentColor">③ 完整原文</text>
-    <text x="615" y="134" text-anchor="middle" font-size="10.5" fill="currentColor">送进提示</text>
-    <line x1="504" y1="122" x2="542" y2="122" stroke="currentColor" stroke-width="1.3" marker-end="url(#b4)"/>
+    <rect class="bx-g" x="546" y="98" width="138" height="48" rx="6"/>
+    <text x="615" y="118" text-anchor="middle" font-size="10.5">③ 完整原文</text>
+    <text x="615" y="134" text-anchor="middle" font-size="10.5">送进提示</text>
+    <line class="ln" x1="504" y1="122" x2="542" y2="122" marker-end="url(#ar)"/>
   </svg>
-  </div>
-  <figcaption>检索用小而准的摘要，生成用大而全的原文——这就是「多向量」的含义。</figcaption>
+<figcaption><span class="fig-n">图 2-5</span>检索用小而准的摘要，生成用大而全的原文——这就是「多向量」的含义。</figcaption>
 </figure>
 
-<div class="codegroup">
-  <div class="codegroup__bar">
-    <button class="langtab" data-lang="py" type="button" aria-selected="true">Python</button>
-    <button class="langtab" data-lang="js" type="button">JavaScript</button>
-    <span class="spacer"></span>
-    <span class="codegroup__file">ch2/{py,js}/k-multi-vector-retriever</span>
-    <button class="chip" data-copy type="button">复制</button>
-  </div>
-  <div data-lang="py" class="is-shown"><pre><code><span class="k">import</span> uuid
+<div class="code" data-group>
+  <div class="bar"><button class="langtab" type="button" data-lang="py" aria-selected="true">Python</button><button class="langtab" type="button" data-lang="js" aria-selected="false">JavaScript</button><span class="file">ch2/{py,js}/k-multi-vector-retriever</span><button class="copy" type="button">复制</button></div>
+<pre data-lang="py" class="is-shown"><code><span class="k">import</span> uuid
 
 <span class="k">from</span> langchain_classic.retrievers.multi_vector <span class="k">import</span> MultiVectorRetriever
 <span class="k">from</span> langchain_core.documents <span class="k">import</span> Document
@@ -604,8 +533,8 @@ retriever.docstore.<span class="f">mset</span>(<span class="f">list</span>(<span
 
 <span class="c"># 3. 直接搜向量库 → 拿到短摘要；走 retriever → 拿到完整原块</span>
 <span class="f">print</span>(<span class="f">len</span>(retriever.vectorstore.<span class="f">similarity_search</span>(<span class="s">"chapter on philosophy"</span>, k=<span class="n">2</span>)[<span class="n">0</span>].page_content))
-<span class="f">print</span>(<span class="f">len</span>(retriever.<span class="f">invoke</span>(<span class="s">"chapter on philosophy"</span>)[<span class="n">0</span>].page_content))</code></pre></div>
-  <div data-lang="js"><pre><code><span class="k">import</span> * <span class="k">as</span> uuid <span class="k">from</span> <span class="s">'uuid'</span>;
+<span class="f">print</span>(<span class="f">len</span>(retriever.<span class="f">invoke</span>(<span class="s">"chapter on philosophy"</span>)[<span class="n">0</span>].page_content))</code></pre>
+<pre data-lang="js"><code><span class="k">import</span> * <span class="k">as</span> uuid <span class="k">from</span> <span class="s">'uuid'</span>;
 <span class="k">import</span> { MultiVectorRetriever } <span class="k">from</span> <span class="s">'@langchain/classic/retrievers/multi_vector'</span>;
 <span class="k">import</span> { InMemoryStore } <span class="k">from</span> <span class="s">'@langchain/core/stores'</span>;
 <span class="k">import</span> { Document } <span class="k">from</span> <span class="s">'@langchain/core/documents'</span>;
@@ -629,7 +558,7 @@ retriever.docstore.<span class="f">mset</span>(<span class="f">list</span>(<span
 });
 <span class="k">await</span> retriever.docstore.<span class="f">mset</span>(docs.<span class="f">map</span>((d, i) =&gt; [docIds[i], d]));
 
-console.<span class="f">log</span>((<span class="k">await</span> retriever.<span class="f">invoke</span>(<span class="s">'chapter on philosophy'</span>))[<span class="n">0</span>].pageContent.length);</code></pre></div>
+console.<span class="f">log</span>((<span class="k">await</span> retriever.<span class="f">invoke</span>(<span class="s">'chapter on philosophy'</span>))[<span class="n">0</span>].pageContent.length);</code></pre>
 </div>
 
 <h3>② RAPTOR：给文档建一棵摘要树</h3>
@@ -642,27 +571,26 @@ console.<span class="f">log</span>((<span class="k">await</span> retriever.<span
 
 <p>普通嵌入把一整块文本压成一个定长向量，信息损失不小。ColBERT 改成<strong>每个 token 一个向量</strong>，检索时拿查询的每个 token 去和文档的所有 token 比，取每个查询 token 的最大相似度再求和。粒度细得多，代价是存储和计算都更贵。</p>
 
-<div class="note note--pit">
-  <p class="note__title">关于 <code>ch2/py/l-rag-colbert.py</code></p>
+<div class="box warn">
+  <div class="t">&#9888; 关于 <code>ch2/py/l-rag-colbert.py</code></div>
   <p>这个示例依赖 <code>ragatouille</code>，它会拉 PyTorch 和 transformers（几个 GB），且不支持 Windows 原生环境（需要 WSL2）。它不是后续章节的前置依赖，跑不起来可以直接跳过。</p>
 </div>
 
 <h2 id="summary">小结</h2>
 
-<div class="grid2">
-  <div class="card"><p class="card__meta">记住这个</p><h4>索引 = 加载 → 切分 → 嵌入 → 入库</h4><p>四步各有一个 LangChain 组件对应，接口都统一，换实现不用改上下游。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>嵌入模型必须前后一致</h4><p>索引和检索必须用同一个模型；不同模型的向量之间没有可比性，换模型要重建索引。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>k 不是越大越好</h4><p>取太多会变慢、变贵，还会把无关内容塞进上下文，反而诱发幻觉。</p></div>
-  <div class="card"><p class="card__meta">记住这个</p><h4>检索单元 ≠ 生成单元</h4><p>这是 MultiVector / RAPTOR 共同的思路，也是提升 RAG 质量最有效的杠杆之一。</p></div>
+<div class="cards">
+  <div class="card"><span class="meta">记住这个</span><h4>索引 = 加载 → 切分 → 嵌入 → 入库</h4><p>四步各有一个 LangChain 组件对应，接口都统一，换实现不用改上下游。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>嵌入模型必须前后一致</h4><p>索引和检索必须用同一个模型；不同模型的向量之间没有可比性，换模型要重建索引。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>k 不是越大越好</h4><p>取太多会变慢、变贵，还会把无关内容塞进上下文，反而诱发幻觉。</p></div>
+  <div class="card"><span class="meta">记住这个</span><h4>检索单元 ≠ 生成单元</h4><p>这是 MultiVector / RAPTOR 共同的思路，也是提升 RAG 质量最有效的杠杆之一。</p></div>
 </div>
 
 <p>下一章把后半段补上：怎么从库里<strong>准确地</strong>捞出该捞的东西。</p>
 
-<nav class="pager">
-  <a href="ch01.html"><span class="dir">上一章</span><span class="ttl">01 · LLM 基础与 LangChain 构建块</span></a>
-  <a class="next" href="ch03.html"><span class="dir">下一章</span><span class="ttl">03 · RAG 下篇：与你的数据对话</span></a>
+<nav class="pager" aria-label="章节翻页">
+<a class="prev" href="ch01.html"><span>&larr; 上一章</span>第 1 章 · LLM 基础与构建块</a>
+<a class="next" href="ch03.html"><span>下一章 &rarr;</span>第 3 章 · RAG 下篇：对话</a>
 </nav>
-</div>
 </main>
 </div>
 <script src="assets/course.js"></script>
