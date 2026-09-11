@@ -6,28 +6,28 @@ To run the examples, you can clone the repository and run the examples in your p
 
 ---
 
-## 📚 中文图解教程（tutorials/）
+## 📚 中文图解教程（docs/）
 
 本仓库附带一套全 11 章的中文精读教程，逐章讲解概念、配大量机制图，并给出与本仓库代码一一对应的可运行示例。
 
-在本地打开 [`tutorials/index.html`](tutorials/index.html) 即可阅读（纯静态页面，无需任何构建步骤）：
+在本地打开 [`docs/index.html`](docs/index.html) 即可阅读（纯静态页面，无需任何构建步骤）：
 
 ```bash
 # macOS
-open tutorials/index.html
+open docs/index.html
 # Linux
-xdg-open tutorials/index.html
+xdg-open docs/index.html
 # 或者起一个本地服务器
-python -m http.server 8000 --directory tutorials
+python -m http.server 8000 --directory docs
 ```
 
 页面右上角可以切换 Python / JavaScript 代码，以及亮色 / 暗色主题（选择会记住）。字体走 Google Fonts，离线时自动回退到系统字体。
 
-想改内容的话：正文片段在 `tutorials/_src/`，页面外壳（导航、翻页、目录）由 `tutorials/build.py` 统一生成——
+想改内容的话：正文片段在 `docs/_src/`，页面外壳（导航、翻页、目录）由 `docs/build.py` 统一生成——
 
 ```bash
-python tutorials/build.py          # 全部重建
-python tutorials/build.py ch03     # 只重建第 3 章
+python docs/build.py          # 全部重建
+python docs/build.py ch03     # 只重建第 3 章
 ```
 
 ## ⬆️ Upgraded to LangChain 1.x / LangGraph 1.x
@@ -65,7 +65,7 @@ now complete, runnable programs sharing `ch8/py/agent.py`), and two Chapter 10 b
 
 ## Table of Contents
 
-- [中文图解教程](#-中文图解教程tutorials)
+- [中文图解教程](#-中文图解教程docs)
 - [Upgraded to LangChain 1.x](#️-upgraded-to-langchain-1x--langgraph-1x)
 - [Quick Start](#quick-start)
   - [Environment variables setup](#environment-variables-setup)

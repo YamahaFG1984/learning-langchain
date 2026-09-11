@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""从 _src/ 下的正文片段生成 tutorials/ 里的完整 HTML 页面。
+"""从 _src/ 下的正文片段生成 docs/ 里的完整 HTML 页面。
 
 用法：
-    python tutorials/build.py            # 全部重建
-    python tutorials/build.py ch03       # 只重建某一章
+    python docs/build.py            # 全部重建
+    python docs/build.py ch03       # 只重建某一章
 
 正文片段（_src/*.html）只包含 <header> 之后的内容；页面外壳（<head>、
 左侧章节导航、顶部工具条、上下章翻页）由本脚本统一生成，所以改导航
